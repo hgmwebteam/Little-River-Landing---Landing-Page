@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800" role="img" aria-label="STAY 1 placeholder">
+  <rect x="1" y="1" width="798" height="798" rx="16" fill="#d9d5cd" stroke="#a9a29a" stroke-width="2" stroke-dasharray="10 8"/>
+  <g font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" text-anchor="middle" fill="#6d675f">
+    <text x="400.0" y="390.0" font-size="44" font-weight="600" letter-spacing="1">STAY 1</text>
+    <text x="400.0" y="446.0" font-size="34" fill="#8c857c">800 x 800</text>
+  </g>
+</svg>

@@ -1,0 +1,3690 @@
+/* ============================================================
+   LINK-IN-BIO LANDING PAGE — COMPONENT LAYER
+   ------------------------------------------------------------
+   Design tokens, the reset, the type scale, .container and
+   .section all live in _template.css and load before this file.
+   Nothing here declares a colour, a font size, or a raw pixel
+   margin. Components consume semantic tokens only.
+
+   To retint the whole page, edit --brand-base and --accent-base
+   at the top of _template.css. Nothing in this file changes.
+   ============================================================ */
+
+:root {
+  /* Section rhythm override. A link-in-bio page wants to be
+     denser than the system default of 96px / 64px. Overriding a
+     token in the consuming layer is allowed; referencing a
+     primitive is not. */
+  --section-y: var(--space-9);            /* 64px */
+
+  /* Component dimensions, not spacing. The 8pt rule governs
+     margins, padding, and gaps — not the height of a banner or
+     the height of a control. */
+  --hero-min:     clamp(34rem, 92svh, 48rem);   /* 544 - 768px */
+  --hero-min-lg:  clamp(38rem, 94svh, 58rem);   /* 608 - 928px */
+  --hero-seam:     7rem;                  /* 112px — photo-to-page fade */
+  --hero-seam-lg: 10rem;                  /* 160px */
+  --hero-logo:      4rem;                 /* 64px  — a height, not a box:  */
+  --hero-logo-lg:  5.5rem;                /* 88px    the logo keeps its own */
+  --hero-logo-max:  15rem;                /* 240px   aspect ratio, so these */
+  --hero-logo-max-lg: 20rem;              /* 320px   cap a wide wordmark.   */
+  --field-h:      3.5rem;                 /* 56px  — one control row */
+  --field-h-lg:     4rem;                 /* 64px  */
+  --claim-radius:   2rem;                 /* 32px  — the closing panel's own
+                                             corner. --radius-lg is 16px and
+                                             correct on a 373px card; on a
+                                             1200px plate the same 16px reads
+                                             as a square with the edges filed
+                                             off. The radius is a proportion
+                                             of the object, so a much larger
+                                             object gets its own. */
+
+  /* Where a landscape photo should sit inside the hero crop.
+     Slightly above centre keeps horizons out of the copy. */
+  --hero-focal: 50% 42%;
+
+  /* MOTION
+     The built in CSS easings are too weak to read as intentional.
+     These are the two curves the page uses; nothing else. */
+  --ease-out:      cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out:   cubic-bezier(0.77, 0, 0.175, 1);
+  --dur-press:     160ms;
+  --dur-ui:        200ms;
+  --dur-reveal:    560ms;
+  --dur-breathe:  3600ms;   /* the amount's glow. Slow enough to read as
+                               breathing rather than blinking. */
+  --dur-crossfade: 1200ms;   /* editorial, not UI — allowed to be slow */
+
+  /* HERO SCRIM STOPS
+     The overlay tokens in _template.css cover flat scrims. A hero
+     needs a multi stop ramp, which no single token can express, so
+     the stops live here as one component owned set. Near black with
+     a blue cast rather than #000 — pure black reads cheap over a
+     photograph. */
+  --hero-scrim-1: rgba(9, 11, 14, 0.40);
+  --hero-scrim-2: rgba(9, 11, 14, 0.18);
+  --hero-scrim-0: rgba(9, 11, 14, 0);
+
+  /* The copy scrim's own stops, below the tokens above rather than
+     sharing them. Above 1024px only ONE scrim is painted, so the
+     stops above carry the job alone. Below it BOTH are painted and
+     they multiply: 0.40 over 0.40 composites to an effective 0.64,
+     which is what made the phone hero read as a dark slab. These
+     are the same ramp sized to be stacked with it, not to stand on
+     its own. Measured at the glyph at 390px this leaves the title
+     at 3.51:1 — the hero strings are 24px and 48px, so the bar is
+     the 3:1 large text one, and that is +17% on it. It is margin,
+     not slack: 0.30 lands at 3.16:1 and is the floor. */
+  --hero-scrim-copy-1: rgba(9, 11, 14, 0.34);
+  --hero-scrim-copy-2: rgba(9, 11, 14, 0.16);
+
+  /* The amenity panel's own ground, under the description that
+     sits over a client photo nobody has vetted. 0.82 rather than
+     _template.css's flat --color-overlay-scrim at 0.50 because
+     the worst case here is a blown out white sky: at 0.50 the
+     panel blends to #8A8A8A and --color-overlay-fg lands at
+     3.4:1, which fails AA for caption sized text. 0.82 blends to
+     #363636 and puts the same text at 8.3:1. */
+  --card-panel:      rgba(9, 11, 14, 0.82);
+  --card-panel-edge: rgba(255, 255, 255, 0.14);
+
+  /* The closing panel's top lip. Raw white alpha rather than a
+     palette step, for the same reason the scrims above are: it is
+     a light source catching the edge of the plate, so it has to
+     hold the same value whatever hue the client's brand is. A
+     gray-800 border would go invisible against the panel's own
+     gray-800 top and visible against its gray-900 bottom, which
+     is a hairline that fades out halfway down the box. */
+  --claim-lip: rgba(255, 255, 255, 0.08);
+
+  /* THE AMOUNT'S GLOW, tinted from the client's brand.
+     --color-brand-identity is the token meant for "the recognisable
+     brand colour", which is the right source for a bloom that is
+     supposed to feel like the brand rather than like a generic neon.
+     Because the hex is client supplied, the alphas are deliberately
+     low: a brand set to something bright has to stay subtle, and a
+     bloom sitting behind white text eats into its contrast. */
+  --glow-core: color-mix(in oklab, var(--color-brand-identity) 68%, transparent);
+  --glow-mid:  color-mix(in oklab, var(--color-brand-identity) 22%, transparent);
+
+  /* Lift for objects that float on a photograph. Black tinted is
+     correct here — the ground is a photo, not a light surface. */
+  --lift-lg: 0 1.5rem 3.5rem rgba(8, 10, 13, 0.42), 0 0.125rem 0.5rem rgba(8, 10, 13, 0.24);
+  /* drop-shadow, not box-shadow: it follows the logo's alpha channel
+     instead of drawing a rectangle around a transparent PNG or SVG.
+     Delete it if the logo already has its own plate or backdrop. */
+  --lift-logo: drop-shadow(0 0.25rem 1rem rgba(8, 10, 13, 0.55));
+}
+
+@media (max-width: 767px) {
+  :root { --section-y: var(--space-7); }  /* 48px */
+}
+
+body {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+a { color: inherit; text-decoration: none; }
+
+:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.center { text-align: center; }
+
+/* ============================================================
+   SECTION MODIFIERS
+   .container and .section themselves come from _template.css.
+   ============================================================ */
+.section--tight { padding-block: var(--space-4) var(--section-y); }
+/* brand-900 rather than the neutral surface token: the panel inside
+   sits on brand-800, and two steps of one ramp read as depth where a
+   gray ground under a brand panel reads as two unrelated colours. */
+.section--alt   { background: var(--brand-900); }
+/* brand-50. The section carries data-theme="light" in the markup, so
+   every token inside it resolves against a light ground while the
+   page around it stays dark. */
+.section--map   { background: var(--color-bg-brand-subtle); }
+
+/* ============================================================
+   SECTION HEADINGS
+   Size and line height come from the .type-* class on the
+   element. Only colour and rhythm live here.
+   ============================================================ */
+.eyebrow { color: var(--color-text-tertiary); margin-bottom: var(--space-2); }
+.heading { color: var(--color-text-primary); margin-bottom: var(--space-3); }
+
+.subhead {
+  color: var(--color-text-secondary);
+  max-width: 46ch;
+  margin-bottom: var(--space-5);
+}
+.center .subhead { margin-inline: auto; }
+
+/* ============================================================
+   BUTTONS
+   Pressed is a treatment, not a colour — steps 700/800/900 are
+   visually bunched, so there is no third step to reach for.
+   ============================================================ */
+.btn {
+  display: inline-block;
+  padding: var(--space-3) var(--space-5);
+  border: 0;
+  border-radius: var(--radius-lg);
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;             /* kills the 300ms tap delay */
+  transition: background-color var(--dur-ui) ease,
+              filter var(--dur-ui) ease,
+              transform var(--dur-press) var(--ease-out);
+}
+
+/* Scale, not translate. A button that moves down looks like it
+   slipped; a button that shrinks looks pressed. */
+.btn:active { filter: brightness(0.92); transform: scale(0.98); }
+
+.btn--primary { background: var(--color-bg-brand-solid); color: var(--color-text-on-solid); }
+
+.btn--outline,
+.btn--ghost {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-default);
+}
+
+/* A filled button that is not the brand colour. It reads as the
+   obvious next step inside a card without competing with the one
+   primary action on the page. Tertiary rather than secondary
+   because gray-50 on a white card is not visible as a shape. */
+.btn--soft {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+/* Touch devices fire :hover on tap and then keep it. Gate it. */
+@media (hover: hover) and (pointer: fine) {
+  .btn--primary:hover { background: var(--color-bg-brand-hover); }
+  .btn--outline:hover,
+  .btn--ghost:hover   { background: var(--color-bg-brand-subtle); }
+  .btn--soft:hover    { background: var(--color-bg-brand-muted); }
+}
+
+.btn--sm    { padding: var(--space-2) var(--space-4); }
+.btn--block { display: block; width: 100%; }
+
+/* ============================================================
+   ICONS
+   ------------------------------------------------------------
+   One box, many glyphs. The base class owns the size and takes
+   its fill from currentColor, so an icon is always the colour of
+   the text it sits beside and never carries a colour of its own.
+   A modifier only swaps --icon.
+
+   Masks rather than <img> or inline <svg>: a mask discards the
+   file's own colour, which is what lets one file serve a light
+   brand and a dark one. The glyphs are Lucide, 24x24, 2px stroke.
+
+   The sizes are dimensions, not spacing — an icon box is an
+   object, so it is exempt from the 8pt rule the same way the
+   field heights and the logo caps are.
+   ============================================================ */
+:root {
+  --icon-phone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z'/%3E%3C/svg%3E");
+  --icon-mail:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='16' x='2' y='4' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E");
+  --icon-car:   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2'/%3E%3Ccircle cx='7' cy='17' r='2'/%3E%3Cpath d='M9 17h6'/%3E%3Ccircle cx='17' cy='17' r='2'/%3E%3C/svg%3E");
+  --icon-train: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='16' height='16' x='4' y='3' rx='2'/%3E%3Cpath d='M4 11h16'/%3E%3Cpath d='M12 3v8'/%3E%3Cpath d='m8 19-2 3'/%3E%3Cpath d='m18 22-2-3'/%3E%3Cpath d='M8 15h.01'/%3E%3Cpath d='M16 15h.01'/%3E%3C/svg%3E");
+  --icon-route: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 11l19-9l-9 19l-2-8l-8-2z'/%3E%3C/svg%3E");
+  --icon-pin:   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3C/svg%3E");
+  --icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 6v6l4 2'/%3E%3C/svg%3E");
+  --icon-peak:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m8 3 4 8 5-5 5 15H2L8 3z'/%3E%3C/svg%3E");
+  --icon-home:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 9l9-7l9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3Cpath d='M9 22V12h6v10'/%3E%3C/svg%3E");
+  --icon-star:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z'/%3E%3C/svg%3E");
+}
+
+.icon {
+  flex: 0 0 auto;
+  display: inline-block;
+  width:  1.25rem;                        /* 20px */
+  height: 1.25rem;
+  background: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+          mask: var(--icon) center / contain no-repeat;
+}
+.icon--sm { width: 1rem;   height: 1rem;   }   /* 16px — inside a chip or a button */
+.icon--lg { width: 1.5rem; height: 1.5rem; }   /* 24px — the lead mark on a tile  */
+
+.icon--phone { --icon: var(--icon-phone); }
+.icon--mail  { --icon: var(--icon-mail);  }
+.icon--car   { --icon: var(--icon-car);   }
+.icon--train { --icon: var(--icon-train); }
+.icon--route { --icon: var(--icon-route); }
+.icon--pin   { --icon: var(--icon-pin);   }
+.icon--clock { --icon: var(--icon-clock); }
+.icon--peak  { --icon: var(--icon-peak);  }
+.icon--home  { --icon: var(--icon-home);  }
+.icon--star  { --icon: var(--icon-star);  }
+
+/* ============================================================
+   1 + 2 · HERO OFFER
+   ------------------------------------------------------------
+   The old hero and the old offer card are one section now. The
+   photograph is the ground, the offer is the content, and on
+   desktop the copy and the form sit on top of the photo.
+
+   Three layers, back to front:
+     __media   the background video
+     __scrim   the gradient that buys the white copy its contrast
+     __seam    the bottom fade that dissolves the photo into the
+               page ground, so section 3 starts with no hard edge
+   ============================================================ */
+.hero-offer {
+  position: relative;
+  isolation: isolate;                     /* keeps the layers out of the page stack */
+  display: flex;
+  align-items: flex-end;                  /* copy sits low; the photo breathes above it */
+  min-height: 34rem;                      /* floor for anything without svh */
+  min-height: var(--hero-min);
+  overflow: hidden;
+}
+
+.hero-offer__media  { position: absolute; inset: 0; z-index: 0; }
+.hero-offer__slides { position: absolute; inset: 0; }
+
+/* The footage is 788x516 and the hero is far wider than that on a
+   desktop, so cover is doing real scaling here. That is the trade for
+   full bleed: it crops rather than letterboxes, and the scrims and the
+   copy sit over the part that stays sharp enough. object-position is
+   the same --hero-focal the photographs used, so re-aiming the crop is
+   still a one line change up in the tokens.
+
+   Explicit width and height, not just object-fit: a <video> keeps its
+   intrinsic aspect ratio otherwise and would sit in the middle of the
+   frame at its native size. */
+.hero-offer__video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: var(--hero-focal);
+  /* Sits under the poster, so a frame that has not arrived yet is the
+     page ground rather than a transparent hole with the scrims over it. */
+  background: var(--color-bg-primary);
+}
+
+/* Kept for a hero that goes back to stills — see the notes in
+   index.html and the slideshow block in script.js, which both still
+   work if the markup is swapped back. */
+.hero-offer__slide {
+  position: absolute; inset: 0;
+  opacity: 0;
+  transition: opacity var(--dur-crossfade) var(--ease-in-out);
+}
+.hero-offer__slide.is-active { opacity: 1; }
+
+.hero-offer__slide img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: var(--hero-focal);
+}
+
+/* Stills only — the video moves on its own, and a Ken Burns push on
+   top of footage that is already moving reads as a wobble.
+
+   The drift is the reason a still photograph does not read as a
+   dead background, and it makes the crossfade legible as a change
+   of scene rather than a flicker. It restarts on every slide
+   because the script re-adds .is-active. Linear because the motion
+   is continuous — any easing would visibly land mid slide.
+   Scale runs 1.01 -> 1.09 so neither end can expose an edge.
+
+   Suppressed under reduced motion — and so is the rotation itself,
+   in script.js. The usual rule is that reduced motion means gentler
+   rather than none, so an opacity crossfade would normally survive.
+   It cannot here: _template.css zeroes every transition-duration
+   with !important, which would turn each slide change into a hard
+   flash-cut every six seconds. A static hero is the better answer,
+   and moving content that runs longer than five seconds with no way
+   to stop it is a WCAG 2.2.2 problem regardless of the preference. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-offer__slide.is-active img { animation: hero-drift 8s linear forwards; }
+}
+@keyframes hero-drift {
+  from { transform: scale(1.01); }
+  to   { transform: scale(1.09); }
+}
+
+/* ACCESSIBILITY, NOT DECORATION.
+   The scrims below exist so white copy clears its contrast bar over
+   footage nobody has vetted. They are about half the weight they used
+   to be, and the text shadow further down is what paid for it: the
+   shadow buys contrast at the glyph edge, where it is actually read,
+   instead of across the whole frame, where it only costs you the
+   picture. Measured at the glyph — the worst 2% of the pixels the
+   letters actually sit on, over seven frames spread across the clip —
+   the title holds 6.4:1 and the offer line 4.9:1 at 1440, and 7.1:1
+   and 8.3:1 at 390. Both are large text, so the bar is 3:1; both
+   clear the 4.5:1 body bar as well. Taking the scrim down without the
+   shadow puts the desktop pair at 3.25:1 and 3.08:1, which is inside
+   the standard and too close to the edge of it to ship.
+
+   There are two scrims because one is not enough. This first is
+   sized to the FRAME, which is the wrong shape on a narrow viewport:
+   the copy block is most of the hero's height there, so its top sits
+   where a bottom weighted ramp has already faded out. Measured at
+   390px before the second scrim existed, the brand strip came in at
+   1.65:1. The frame scrim handles the overall grade; the copy scrim
+   below handles legibility. */
+.hero-offer__scrim {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(to top,
+      var(--hero-scrim-1)  0%, var(--hero-scrim-1) 18%,
+      var(--hero-scrim-2) 42%, var(--hero-scrim-0) 70%),
+    linear-gradient(to top, var(--hero-scrim-2) 0%, var(--hero-scrim-0) 30%);
+}
+
+/* Two ramps, not one. A single linear fade to the page colour has
+   a visible waist about a third of the way up. */
+.hero-offer__seam {
+  position: absolute; inset: auto 0 0 0;
+  height: var(--hero-seam);
+  background:
+    linear-gradient(to top, var(--color-bg-primary) 0%, transparent 100%),
+    linear-gradient(to top, var(--color-bg-primary) 0%, transparent 55%);
+}
+
+.hero-offer__inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  /* Not .container — a hero over a photo wants a wider gutter than
+     a text section, and it has no left edge to align to. */
+  padding: var(--space-12) var(--space-4);
+
+  /* THE COPY SCRIM. Sized to the copy rather than to the frame, so
+     it is exactly as tall as it needs to be at any viewport. Below
+     1200px this element is full width, which is why it can carry a
+     background at all; above 1024px the diagonal frame scrim is
+     already doing the work and this one is switched off, because
+     here it would darken the bright right hand side of the photo.
+
+     Both ends fade inside the box's own padding, so the band has no
+     visible edge — and the bottom fade matters twice over, since a
+     hard alpha meeting __seam would print a line exactly where the
+     hero is supposed to dissolve into the page.
+
+     The bottom stop is 24%, not 16%: the plateau used to start
+     below the copy and darken frame the text never sat on, which
+     is dark mass paid for with nothing. Measured at the glyph,
+     moving it up changes the title and offer readings by 0.00 —
+     it only takes weight out of the band under the form. */
+  background: linear-gradient(to top,
+    var(--hero-scrim-0)        0%,
+    var(--hero-scrim-copy-1)  24%,
+    var(--hero-scrim-copy-1)  70%,
+    var(--hero-scrim-copy-2)  94%,
+    var(--hero-scrim-0)      100%);
+}
+
+/* ---- logo ------------------------------------------------------ */
+/* No crop and no frame — the logo is shown as it is. It is sized by
+   HEIGHT with width left to follow, so a square mark and a wide
+   wordmark both drop in without editing anything but the token. */
+.hero-offer__logo {
+  display: block;
+  width: fit-content;
+  margin-bottom: var(--space-6);
+}
+.hero-offer__logo img {
+  height: var(--hero-logo);
+  width: auto;
+  max-width: min(var(--hero-logo-max), 100%);
+  object-fit: contain;                    /* honours the ratio if both cap */
+  filter: var(--lift-logo);
+}
+
+/* Every string in this hero uses --color-overlay-text. Dimming
+   secondary copy with --color-overlay-fg measures ~4.0:1 against
+   the scrim's worst case and fails AA, so the hierarchy is carried
+   by size and weight instead of by opacity. */
+
+/* THE SHADOW IS LOAD BEARING NOW, on both strings below.
+   It used to be a single wide 24px glow doing an atmospheric job the
+   scrim had already done. Two layers instead, and both are contrast:
+   the 2px one is a hard edge that separates a letter from whatever is
+   immediately behind it, the 12px one is the pad that catches a
+   bright patch of footage drifting under a counter or a serif. That
+   pair is what let the scrim come down by half — see the measurements
+   over the frame scrim. If you soften these, put the scrim back. */
+
+/* ---- headline: the one liner, first in the hierarchy ------------ */
+.hero-offer__title {
+  max-width: 34rem;
+  margin-bottom: var(--space-5);
+  color: var(--color-overlay-text);
+  text-shadow: 0 1px 2px rgba(9, 11, 14, 0.55), 0 2px 12px rgba(9, 11, 14, 0.75);
+}
+
+/* ---- the offer: second in the hierarchy ------------------------- */
+/* Half the headline's size at both breakpoints (72/36 desktop,
+   48/24 mobile). A 2:1 step is unambiguous; anything closer and the
+   two lines start arguing about which one you read first. */
+.hero-offer__offer {
+  max-width: 34rem;
+  color: var(--color-overlay-text);
+  text-shadow: 0 1px 2px rgba(9, 11, 14, 0.55), 0 2px 12px rgba(9, 11, 14, 0.75);
+
+  /* Regular, not the role's own semibold. The amount next to it is
+     bold, and 600 against 700 is a step you cannot see in a display
+     serif — the emphasis was landing on nothing. 400 against 700
+     reads immediately, and it makes the lead-in behave like the
+     label it is. */
+  font-weight: var(--fw-regular);
+}
+
+.hero-offer__amount {
+  display: inline-block;                  /* so the bloom below has a box to
+                                             sit in; an inline span does not
+                                             give ::before a reliable one */
+  white-space: nowrap;                    /* and so it never splits mid amount */
+  position: relative;
+  isolation: isolate;                     /* keeps ::before above the photo */
+
+  /* Georgia — the fallback inside --font-display — has OLDSTYLE numerals, so
+     an unloaded webfont renders "10%" with an x-height zero. The discount is
+     the loudest glyph on the page; it does not get to depend on the network. */
+  font-variant-numeric: lining-nums;
+}
+
+/* THE GLOW.
+   A soft brand tinted bloom BEHIND the text, not a halo traced around
+   each glyph. Two reasons. A per glyph outline is the neon tell that
+   reads cheap on a hospitality page, and animating text-shadow or
+   filter repaints 72px type every frame, where a pseudo element only
+   needs opacity and transform — both of which the compositor handles.
+
+   The dark text-shadow above is now doing double duty: it keeps a
+   dark separation at the glyph edges, which is what stops a bright
+   client brand colour from washing the contrast out. Removing one
+   without the other is what breaks this. */
+.hero-offer__amount::before {
+  content: "";
+  position: absolute;
+  inset: -1rem -1.5rem;                   /* 16px / 24px, scaled to 36px type */
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(58% 58% at 50% 50%,
+    var(--glow-core)  0%,
+    var(--glow-mid)  46%,
+    transparent      74%);
+  opacity: .42;                           /* the still state */
+  pointer-events: none;
+}
+
+/* The one perpetual animation on the page, and it is on the one
+   element the whole hero exists to sell. Under reduced motion the
+   bloom above simply holds at .42, which looks deliberate rather
+   than broken. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-offer__amount::before {
+    animation: amount-breathe var(--dur-breathe) var(--ease-in-out) infinite;
+  }
+}
+@keyframes amount-breathe {
+  0%, 100% { opacity: .30; transform: scale(0.96); }
+  50%      { opacity: .66; transform: scale(1.04); }
+}
+
+/* ---- entrance -------------------------------------------------- */
+/* Four elements, 70ms apart. First load only, so it is allowed to
+   be slower than a UI transition. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-offer__logo,
+  .hero-offer__title,
+  .hero-offer__offer,
+  .offer-form--hero {
+    animation: hero-rise var(--dur-reveal) var(--ease-out) both;
+  }
+  .hero-offer__logo  { animation-delay:  40ms; }
+  .hero-offer__title { animation-delay: 110ms; }
+  .hero-offer__offer { animation-delay: 180ms; }
+  .offer-form--hero  { animation-delay: 250ms; }
+}
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ============================================================
+   OFFER FORM  —  used by the hero and by section 9
+   ------------------------------------------------------------
+   One component in two settings. In the hero it is a white
+   surface floating on a photograph, so it carries its own fill
+   and shadow. In the closing panel it is a dark well cut into a
+   dark plate, so it carries a hairline instead. Both run their
+   control row inline once there is width for it; the base is the
+   stacked phone layout.
+
+   The control carries data-theme="light" in the hero — a light
+   surface on a dark page, the same trick the cards use. The
+   closing panel inverts that: the panel itself is pinned dark
+   and the control simply inherits it.
+   ============================================================ */
+
+/* Hidden from view, kept for assistive tech. The 1px box and the
+   negative margin are the canonical visually-hidden recipe, not
+   layout spacing, which is why they sit off the 8pt scale.
+   display:none and visibility:hidden would both take the label out
+   of the accessibility tree with it, leaving the input unnamed. */
+.offer-form__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.offer-form__control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+}
+
+/* The ring goes on the container, not the input. The input has no
+   edge of its own, so a ring drawn on it would float in the middle
+   of a white box. */
+.offer-form__control:focus-within {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.offer-form__field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: calc(var(--field-h) - var(--space-2));
+  padding-inline: var(--space-3);
+}
+
+.offer-form__icon {
+  flex: 0 0 auto;
+  width: 1.5rem; height: 1.5rem;
+  color: var(--color-fg-secondary);
+}
+.offer-form__icon svg { width: 100%; height: 100%; }
+
+.offer-form__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;                             /* the container shows focus */
+  background: transparent;
+  color: var(--color-text-primary);
+}
+
+/* gray-700, not gray-600. The lighter step measures 3.9:1 on white
+   and fails AA for placeholder text. */
+.offer-form__input::placeholder { color: var(--color-text-secondary); }
+
+.offer-form__control .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(var(--field-h) - var(--space-2));
+  padding-block: 0;
+  border-radius: var(--radius-md);        /* parent radius minus parent padding */
+}
+
+
+/* ---- the hero variant ------------------------------------------ */
+.offer-form--hero {
+  max-width: 34rem;
+  margin-top: var(--space-5);
+}
+
+/* The edge matches the closing form on purpose — the two forms are the
+   same offer and should read as the same control. It carries a shadow
+   as well, which the closing one does not: that form sits on a plate
+   that is already the lifted object, this one sits on moving footage
+   and needs the lift to hold its own shape. The 1px adds 2px to the
+   row height; the closing form has always paid the same 2px. */
+.offer-form--hero .offer-form__control {
+  background: var(--color-bg-primary);
+  border-color: var(--color-border-default);
+  box-shadow: var(--lift-lg);
+}
+
+/* Field and button share a row once there is width for it. Below
+   this the button drops under the field and fills it. */
+@media (min-width: 768px) {
+  /* 24px of gutter against a full bleed photograph leaves the copy
+     hugging the edge once the viewport is this wide. */
+  .hero-offer__inner { padding-inline: var(--space-7); }
+
+  .offer-form--hero .offer-form__control { flex-direction: row; align-items: center; }
+  .offer-form--hero .offer-form__field   { flex: 1; min-width: 0; }
+  .offer-form--hero .offer-form__control .btn { flex: 0 0 auto; }
+}
+
+
+/* ---- the closing variant --------------------------------------- */
+
+/* Inset, not raised. The plate around it is already the lifted
+   object, so a second shadow here would give the section two
+   things floating at once. bg-primary under the panel's pinned
+   dark theme is gray-950 — one step below the darkest part of the
+   plate's own gradient, which is what makes the field read as cut
+   into the surface rather than laid on top of it. */
+.offer-form--claim { margin-top: var(--space-5); }
+
+.offer-form--claim .offer-form__control {
+  background: var(--color-bg-primary);
+  border-color: var(--color-border-default);
+}
+
+/* 640, not 768. The hero's copy column is capped at 34rem and the
+   row only fits past 768; this one has the whole panel width on a
+   tablet, so it can go inline a breakpoint earlier. */
+@media (min-width: 640px) {
+  .offer-form--claim .offer-form__control { flex-direction: row; align-items: center; }
+  .offer-form--claim .offer-form__field   { flex: 1; min-width: 0; }
+  .offer-form--claim .offer-form__control .btn { flex: 0 0 auto; }
+}
+
+/* ============================================================
+   9 · CLOSING OFFER PANEL
+   ------------------------------------------------------------
+   A photograph and a card laid over it. The card straddles the
+   photo's edge rather than sitting beside it, which is the whole
+   idea: two panels side by side read as two things, one card
+   overlapping a picture reads as one object with depth.
+
+   The plate carries data-theme="dark" in the markup, so every
+   token inside it resolves to its dark value whichever theme the
+   page is set to. That is deliberate and it is the opposite of
+   what the cards above do. The cards are light islands because
+   they hold content you read through; this is the last thing
+   before the footer and its job is to land, so it is the one
+   block on the page that goes darker than the page.
+   ============================================================ */
+.claim {
+  position: relative;
+  overflow: hidden;                       /* the photo takes the plate's
+                                             corners, so it has to be clipped
+                                             by them */
+  border-radius: var(--claim-radius);
+  color: var(--color-text-primary);
+
+  /* Two layers, and a frame of the clip covers both of them. The
+     linear is the plate:
+     gray-800 down to gray-900, which separates it from the
+     gray-950 page without needing an edge. The radial on top is
+     the light falling into the corner the card sits in.
+     --glow-mid is the brand tinted bloom the hero's amount
+     already uses, at 22%, so the plate picks up the client's hue
+     instead of being a neutral box. */
+  background:
+    radial-gradient(120% 90% at 100% 0%, var(--glow-mid) 0%, transparent 62%),
+    linear-gradient(160deg, var(--color-bg-tertiary) 0%, var(--color-bg-secondary) 58%);
+  /* Nothing above is visible once a frame lands — the photograph
+     covers the plate at every width now. It is the ground the
+     video loads onto, and the ground the phone layout shows above
+     the card if the clip is ever swapped for a shorter file. */
+}
+
+/* The lip. Inset rather than a border so it does not take a pixel
+   off the photo's edge, and top only — a hairline all the way
+   round reads as a stroked box, one along the top reads as light.
+   Above the card, so the highlight is not cut in half where the
+   card reaches the plate's top corner. */
+.claim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 var(--claim-lip);
+  pointer-events: none;
+}
+
+/* ---- the footage ----------------------------------------------- */
+
+/* A band across the top here, the whole plate at 1024. Sized the
+   same whether the child is an <img> or a <video> — the rule below
+   covers both. */
+.claim__media {
+  position: relative;
+
+  /* Explicit, not the block default. A box carrying both an
+     aspect-ratio and a max-height resolves the clamp by taking
+     width off instead of height unless the width is definite —
+     at 900px the band came out 651px wide inside an 868px plate,
+     with the ratio preserved and a quarter of the plate left
+     bare. Pinned to 100%, the clamp lands on the height and
+     object-fit below crops the difference, which is the intent. */
+  width: 100%;
+
+  /* 4:3, not a wider strip. The card overlaps the bottom 56px of
+     it, so the ratio has to buy back what the overlap takes —
+     16:11 left 180px of photograph showing on a 390px phone,
+     which is a letterbox, not a picture. */
+  aspect-ratio: 4 / 3;
+
+  /* The ratio alone is a phone rule. At 900px the same ratio is
+     600px of photograph before the offer is reachable, so the
+     height caps and the ratio gives way — object-fit below crops
+     it. A cap rather than a second ratio at a breakpoint: it is
+     one number and it holds at every width in between. */
+  max-height: 22rem;                      /* 352px */
+}
+
+.claim__media img,
+.claim__media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Same aim as the hero, so both crops of the one clip frame the same
+   point. The phone crop is the tight one — a 4:3 band taken out of
+   landscape footage loses the sides — which is why the framing is a
+   token and not a number typed in twice. */
+.claim__media video {
+  object-position: var(--hero-focal);
+  background: var(--color-bg-tertiary);   /* the plate, until a frame lands */
+}
+
+/* A vignette, not a legibility device — see the chip below, which
+   carries its own ground. Top weighted, stopping at 42%, so the
+   plate's top corners and the lip highlight along them have
+   something to sit against whatever the photograph is doing up
+   there, and the rest of the picture is untouched. */
+.claim__veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, var(--card-panel) 0%, transparent 42%);
+  pointer-events: none;
+}
+
+/* ---- the card that overlaps it ---------------------------------- */
+
+/* The negative top margin is the overlap. It pulls the card up
+   onto the bottom of the photograph, so the two are one stacked
+   object rather than a picture with a box under it. On a desktop
+   the same job is done by absolute placement.
+
+   --card-panel again, and for the third time the same reason: it
+   is the one ground on this page measured to hold text over a
+   photograph nobody has vetted. The blur is what makes it read
+   as glass rather than as a hole cut in the picture, and
+   --lift-lg is the black tinted shadow meant for exactly this —
+   an object floating on a photo. */
+.claim__card {
+  position: relative;
+  z-index: 1;
+  /* Flush left, right and bottom. Inset by --space-3 the card left a
+     band of bare plate down both sides and along the floor, which
+     read as a box dropped on the picture; taking it to the edges
+     is what makes the bottom of the plate the card. Only the top
+     margin is left, and it is the overlap.
+
+     The bottom corners are --claim-radius, not --radius-lg: the
+     card's edge IS the plate's edge here, so its corners have to
+     be the plate's corners or the plate clips a square one. */
+  margin: calc(-1 * var(--space-8)) 0 0;
+  padding: var(--space-5) var(--space-4) var(--space-6);
+  border: 1px solid var(--card-panel-edge);
+  border-radius: var(--radius-lg) var(--radius-lg)
+                 var(--claim-radius) var(--claim-radius);
+  background: var(--card-panel);
+  -webkit-backdrop-filter: blur(1.25rem);
+  backdrop-filter: blur(1.25rem);
+  box-shadow: var(--lift-lg);
+}
+
+.claim__title { margin-bottom: var(--space-3); }
+
+/* The amount is colour and weight, not a size jump and not a
+   second glow. The hero already spends a breathing bloom on this
+   number; doing it twice on one page turns a highlight into a
+   tic. text-accent is the 300 step in dark, so it stays legible
+   on the card whatever the client's secondary hex is.
+
+   nowrap because "[10% off]" breaking across two lines is the one
+   thing in the headline that must not happen. */
+.claim__amount {
+  white-space: nowrap;
+  color: var(--color-text-accent);
+  font-weight: var(--fw-bold);
+}
+
+/* ============================================================
+   RAIL HEADER + ARROWS
+   A rail's affordance on a phone is the cut off card plus the
+   swipe. With a mouse the cut off card is still there but the
+   gesture is not, so the arrows carry it — and they are the
+   keyboard route as well. Tab still reaches every card link on
+   its own (focusing an offscreen link scrolls it into view), so
+   these are an improvement on the interaction, not the only way
+   through it.
+   ============================================================ */
+.rail-head__intro { min-width: 0; }
+
+/* Hidden on phones: the swipe is the obvious gesture there, and
+   two more tap targets in the header would only crowd it. */
+.rail-nav { display: none; }
+
+/* Needed because the desktop rule sets display:flex, which beats
+   the browser's own [hidden] styling on specificity. script.js
+   sets the attribute when the rail has nothing left to scroll.
+
+   One class, and it has to keep winning: [hidden] is (0,2,0) and
+   every rule that turns a nav on below is a single class at
+   (0,1,0), so "the rail has nothing to scroll" always beats "this
+   breakpoint shows arrows". Add a two-class selector that turns a
+   nav on and you break that. */
+.rail-nav[hidden] { display: none; }
+
+/* The reviews' variant: centred under its rail rather than hung
+   beside a heading, because that panel's header is centre
+   aligned and arrows off to one side would be the only thing in
+   the block that is not.
+
+   GATED ON A POINTER, NOT ON A WIDTH, which is the one thing that
+   differs from the nav in the section header. That one is a
+   desktop-layout decision — it appears when the header goes
+   two-column at 1024px. This one replaces the self-scrolling
+   animation that used to run, and that animation ran wherever
+   there was a mouse, including in a 900px-wide window. Gating on
+   width instead would leave a narrow desktop window with neither
+   the animation it used to have nor the arrows that replaced it.
+   A touchscreen gets no arrows and swipes the row, as before. */
+.rail-nav--center { display: none; }
+
+@media (hover: hover) and (pointer: fine) {
+  .rail-nav--center {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+  }
+}
+
+.rail-nav__btn {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  padding: var(--space-0);
+  /* Strong, not default, unlike .btn--outline. That button is
+     identified by its text label, so a soft edge costs it
+     nothing. This one is a bare glyph, so the ring is what says
+     "control" — and WCAG 1.4.11 wants 3:1 for that. Default
+     measures 2.52:1 on the dark ground; strong measures 3.79:1. */
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color var(--dur-ui) ease,
+              border-color var(--dur-ui) ease,
+              opacity var(--dur-ui) ease,
+              transform var(--dur-press) var(--ease-out);
+}
+.rail-nav__btn svg { width: 1.25rem; height: 1.25rem; }
+.rail-nav__btn:active { transform: scale(0.94); }
+
+/* Dimmed rather than removed. A control that disappears at the
+   end of the rail takes its neighbour's position with it, and
+   the pair jumping sideways mid-interaction is worse than a
+   button that is visibly spent. */
+.rail-nav__btn[disabled] {
+  cursor: default;
+  opacity: 0.35;
+  color: var(--color-text-disabled);
+  border-color: var(--color-border-subtle);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rail-nav__btn:not([disabled]):hover {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-border-strong);
+  }
+}
+
+/* On a phone the section header and its CTA centre up. Left
+   alignment is a desktop decision: it exists so the heading
+   shares an edge with the first card, and on a phone the rail
+   is a bleeding swipe strip with no settled edge to share.
+
+   It also puts this section in line with the rest of the page —
+   Amenities, Local Favourites, and Location all carry
+   .center already, so on a phone every section header is
+   centred and Stays is the odd one out only on desktop. */
+@media (max-width: 767px) {
+  .rail-head    { text-align: center; }
+  .rail-actions { text-align: center; }
+
+  /* Not decorative. .subhead carries max-width: 46ch, which
+     starts binding around 640px, and without auto margins the
+     centred text would sit in a box hugging the left edge.
+     Same pairing as the .center .subhead rule above. */
+  .rail-head .subhead { margin-inline: auto; }
+}
+
+/* ============================================================
+   SLIDERS — swipe on phones, tidy rows on desktop
+   Used by: Featured Stays, Amenities, Reviews
+   ============================================================ */
+.slider { position: relative; }
+
+.slider__track {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: var(--container-x);
+  scroll-behavior: smooth;
+  padding: var(--space-0) var(--container-x) var(--space-4);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.slider__track::-webkit-scrollbar { display: none; }
+/* "none start", not "start". The one word shorthand sets BOTH
+   axes, so every card in every rail was quietly declaring itself
+   a vertical snap position as well as a horizontal one. That
+   costs nothing while the page does not snap vertically, which it
+   no longer does — but it cost plenty while it did: scrolls
+   ending anywhere near the foot of the page jumped a couple of
+   hundred pixels to land on a card. Kept explicit so the next
+   thing to turn on vertical snapping does not inherit the same
+   surprise. Block axis off, inline axis start. */
+.slider__track > * { scroll-snap-align: none start; flex: 0 0 auto; }
+
+/* 3 · Featured stay card — data-theme="light" in the markup
+   ------------------------------------------------------------
+   A white plate on the dark page. The photo is inset by the
+   card's own padding rather than bleeding to the edge, which is
+   what gives the card its frame, and the two radii are nested
+   (lg outside, md inside) so the inner corner does not look
+   like it is trying and failing to match the outer one.
+
+   Everything is left aligned. The photo's left edge is the one
+   vertical line the name, the meta row, and the button all share,
+   and it is the same line the section heading sits on at desktop
+   widths — see .slider--grid further down. */
+.stay-card {
+  display: flex;
+  flex-direction: column;
+  /* 288px. Chosen against the rail, not in isolation: inside the
+     1200px container it puts 3.8 cards in view, so the fourth is
+     cut about a fifth of the way through and reads as "there is
+     more" without a caption saying so. The min() is the 320px
+     screen — 18rem there would leave no peek at all. */
+  width: min(18rem, 78vw);
+  /* brand-50. The card carries data-theme="light" in the markup, so
+     every token inside it — text, the CTA, the arrow disc — resolves
+     against a light ground while the page around it stays dark. */
+  background: var(--color-bg-brand-subtle);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2);
+  text-align: left;
+}
+.stay-card__media {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+}
+.stay-card__media img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Padding rather than margins so the three rows keep one shared
+   edge, and margin-top:auto on the button so cards in the same
+   desktop row bottom out together when one name wraps to two
+   lines and its neighbour does not. */
+.stay-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: var(--space-3) var(--space-2) var(--space-2);
+}
+.stay-card__title { color: var(--color-text-primary); }
+.stay-card__meta  {
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+/* The whole card is the link, so this is a <span> styled as a
+   button, not a nested <a>. It carries no hover of its own for
+   that reason — the card's hover drives it. */
+/* One brand step up from the card, not gray-100: --color-bg-tertiary
+   on a brand-50 ground is two near identical light values and the
+   button stops reading as a shape. */
+.stay-card__cta {
+  background: var(--color-bg-brand-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: auto;
+  min-height: 3rem;                        /* 48px — comfortable thumb target */
+  padding: var(--space-2) var(--space-3);
+}
+
+/* Optically centred: the arrow disc is heavier than the label, so
+   centring the pair as one group would leave the text reading as
+   though it had drifted left. Nudging by half the disc keeps the
+   label itself on the card's centre line. */
+.stay-card__cta-label { margin-left: var(--space-5); }
+
+.stay-card__arrow {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  transition: transform var(--dur-ui) var(--ease-out),
+              background-color var(--dur-ui) ease,
+              color var(--dur-ui) ease;
+}
+.stay-card__arrow-glyph { width: 1rem; height: 1rem; }
+
+@media (hover: hover) and (pointer: fine) {
+  /* Fills with the brand on hover — brand-100 to brand-200 would be
+     a hover nobody can see now that the base step is brand-100. */
+  .stay-card:hover .stay-card__cta {
+    background: var(--color-bg-brand-solid);
+    color: var(--color-text-on-solid);
+  }
+  .stay-card:hover .stay-card__arrow {
+    background: var(--color-text-on-solid);
+    color: var(--color-bg-brand-solid);
+    transform: translateX(var(--space-1));
+  }
+}
+
+/* 5 · Amenities — numbered steps beside a pinned photo
+   ------------------------------------------------------------
+   Two columns on a wide screen: the left pins itself with
+   position: sticky and carries the heading and the photo, the
+   right is an ordinary <ol> that scrolls past it. Whichever step
+   is nearest the middle of the viewport is the active one, and
+   the photo swaps to match — script.js picks it with an
+   IntersectionObserver.
+
+   Mobile keeps the photo. The design this came from drops the
+   pinned column entirely below 1024px, heading and all five
+   photos with it, leaving a phone a text-only list. On a page
+   whose whole job is to sell a rental that is the wrong half to
+   throw away, so here the column stays and the photo pins above
+   the list instead, still swapping as you read down.
+   ------------------------------------------------------------ */
+/* 48px top and bottom, where a normal section takes --section-y
+   (64px on a desktop, 48px on a phone). Set on both edges rather
+   than only the top so the section keeps the same air above and
+   below it whatever the width. */
+/* NOT overflow: hidden, however much the scaled blur below looks
+   like it wants it here. The aside pins with position: sticky at
+   1024px and up, and an ancestor with overflow: hidden becomes the
+   scroll container it sticks inside — a box the same height as its
+   own contents, which never scrolls, so the pin silently never
+   engages and the column just scrolls away with the list. Measured
+   with it on: the aside reached -1656px by the fourth amenity
+   instead of holding at 48. The clip belongs on the backdrop, which
+   is absolutely positioned and so is nobody's offset parent. */
+.section--process {
+  padding-block: var(--space-7);
+  position: relative;                      /* the backdrop is absolute inside it */
+  isolation: isolate;                      /* keeps the sticky photo's z-index a
+                                              local matter, not a page-wide one */
+
+  /* The copy scrim's fill — see .section--process::after below for
+     what it is for. Flat and full width here, because on a phone
+     the copy runs the full width of the screen and every part of
+     it needs paying for. The pinned layout swaps it for a left
+     weighted ramp, where the copy is all in one column.
+
+     A gradient rather than a colour because this is consumed as a
+     background LAYER, which has to be an image; a two stop
+     linear-gradient is the shortest way to write a flat one. */
+  --copy-scrim: linear-gradient(rgba(0, 0, 0, 0.48), rgba(0, 0, 0, 0.48));
+}
+
+/* The section's own ground stays underneath everything here and is
+   what the contrast below was measured against — the backdrop only
+   ever tints it, it never replaces it. If the images fail to load,
+   or color-mix is unsupported and the veil falls back to opaque,
+   the section is exactly the flat --color-bg-secondary it was. */
+.process__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;                        /* the blur is scaled past the edges */
+
+  /* Fades the wash out at the section's top and bottom edges so it
+     dissolves into the flat ground rather than stopping on a line.
+     The section still has its hard edge against the pages either
+     side of it; this is only about the photo not having one too.
+
+     LENGTHS, NOT PERCENTAGES, and that is not tidying. The stops
+     were 10% and 90%, which was a 90px fade on the 900px section
+     this used to be. The desktop layout below turns the section
+     into a four screen scroll track, and the same 10% became a
+     340px ramp — a whole screen of the pinned frame reading
+     against no wash at all, fading up while you were already
+     looking at it. A fade is a fixed distance in the reader's
+     eye, so it is written as one. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 8rem, #000 calc(100% - 8rem), transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 8rem, #000 calc(100% - 8rem), transparent 100%);
+}
+
+/* brightness() is doing the accessibility work, not the blur.
+   A blur spreads a bright area out but does not dim it, and the
+   worst patch across these four photos blurs to #E2D5C6 — light
+   enough that a veil weak enough to be worth having would put the
+   dimmed step copy under 4.5:1. Darkening the photograph first
+   means the wash contributes hue and not lightness, which is also
+   the effect that was wanted: the ground goes warm for the
+   restaurant and cold for the marina without going pale.
+
+   Measured on that worst patch, at brightness 0.65 under a veil of
+   0.80: body copy 8.15:1, an inactive step at its 0.68 dim 4.81:1,
+   the numeral in --color-text-brand 5.23:1. The binding number is
+   the 4.81 — every step of this was chosen to keep it over 4.5.
+
+   THE SCALE IS DOING TWO JOBS. The first is the old one: a blur
+   samples past the element's edge, finds nothing there, and leaves
+   a soft transparent border, so the image is grown past the box to
+   push that border outside the section where the clip removes it.
+   115% is the figure that does it.
+
+   The second is cost, and it is the reason the box is 25% and the
+   scale is 4.6 rather than the box being 100% and the scale 1.15.
+   A filter has to rasterise the layer it applies to, and on the
+   desktop layout below this box is the height of a four screen
+   scroll track — around 1440x3400, which is 20MB of raster per
+   photograph and four photographs in the section. Blurring a
+   quarter-size copy and scaling the RESULT up costs a sixteenth of
+   that, and scaling an already blurred layer is free on the GPU.
+   Nothing is lost: the output is a 48px blur either way, and the
+   detail a blur that heavy throws away is exactly the detail the
+   downscale threw away first.
+
+   The two numbers are tied — 25% x 4.6 = 115%, and the blur is
+   divided by the same 4.6 (10.5 x 4.6 = 48) — so if either moves
+   the other has to move with it. transform-origin at the top left
+   rather than the centre, because the box is a quarter of the
+   section pinned to its corner and the scale has to grow it back
+   over the whole of it, not outwards from its middle. */
+.process__backdrop-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 25%;
+  height: 25%;
+  object-fit: cover;
+  opacity: 0;
+  transform-origin: 0 0;
+  transform: scale(4.6);
+  filter: blur(10.5px) brightness(0.65) saturate(1.2);
+}
+.process__backdrop-img.is-active { opacity: 1; }
+
+/* Same reasoning as the frame below: nothing has run yet, or
+   script.js never arrived, so show the one that matches the first
+   step rather than an empty tint. */
+.process__backdrop:not(.is-enhanced) .process__backdrop-img:first-child { opacity: 1; }
+
+/* The veil. --color-bg-secondary is the ground the section would
+   have had on its own; mixing the brand into it is what makes the
+   wash read as the deep teal rather than as a grey haze, and
+   because the brand hex is darker than the ground it also buys
+   back contrast rather than spending it.
+
+   The opaque declaration first is the fallback: a browser without
+   color-mix drops the second line, gets a solid ground, and loses
+   the photograph — which is the right way for this to fail. */
+.process__backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg-secondary);
+  background: color-mix(
+    in srgb,
+    color-mix(in oklab, var(--color-bg-secondary) 55%, var(--color-brand-identity)) 80%,
+    transparent
+  );
+}
+
+/* THE COPY SCRIM — the layer that pays for the fade further down.
+
+   It exists for one reason: the inactive amenities are faded to
+   0.45, and 0.45 of near-white does not clear 3:1 on the ground
+   the veil above leaves behind. See the long note over the fade
+   for the numbers. This is not decoration and it cannot be taken
+   out without putting that fade back to 0.68.
+
+   A FLAT BLACK rather than more veil, because the veil's own
+   colour is the ceiling on how dark the veil can get — measured,
+   and pushing its opacity and the photograph's brightness
+   together barely moved the ground. Black has no such ceiling. It
+   costs some of the photograph's colour coming through, which is
+   what the wash is for, and that is the trade: the wash is
+   decorative and the text is not.
+
+   IT IS ON THE SECTION AND NOT ON THE BACKDROP, and that is the
+   whole reason it is a separate element rather than another
+   background layer on the veil. The backdrop is masked — it fades
+   out over 8rem at the section's top and bottom edges so the wash
+   dissolves rather than stopping on a line — and a scrim riding
+   that mask fades out with it. Which is exactly the wrong place
+   for it to fade: the pinned frame sits AT the top of the section
+   for the whole first screen of the track, so the readability
+   scrim was thinnest precisely where the copy first appears.
+   Measured there, an inactive title came out at 2.49:1. On the
+   section, unmasked, the scrim is even the whole way down.
+
+   z-index 0 and last in paint order. The backdrop is also 0 but
+   comes first in the DOM, so this lands on top of it, and .process
+   is 1, so the copy lands on top of this. */
+.section--process::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--copy-scrim);
+}
+
+/* Above the backdrop. */
+.process {
+  position: relative;
+  z-index: 1;
+}
+
+/* display: contents, so on a phone the wrapper stops being a box
+   at all and the heading, the photo and the list become siblings
+   in one column. That is what lets the photo pin: a sticky
+   element can only travel inside its own parent, and boxed in the
+   aside it would come unstuck the moment the aside ended — which
+   is immediately, since the aside ends where the list begins.
+   Dissolved, its parent is .process, which runs the height of the
+   section, so the photo can hold while the whole list goes past.
+
+   The heading is left out of the pin deliberately. Pinning the
+   aside whole was the first attempt and it took 414px of a 664px
+   phone screen — 62%, with the list reading through the slot left
+   over. The heading is read once and does not need to stay. */
+/* Both of these dissolve on a phone. The column wrapper only
+   exists to hold the two blocks together as ONE grid item in the
+   pinned layout; here there is no grid and no second column, and
+   a box around them would be a box for nothing — worse than
+   nothing, because .process__aside below has to be able to
+   dissolve too, and a sticky or a grid rule can only see one
+   level up. Contents all the way down, the heading, the list and
+   the per-step photos are direct children of .process. */
+.process__col   { display: contents; }
+.process__aside { display: contents; }
+
+/* THE DECK — a stage, not a frame.
+
+   Every card is out of flow, so the stage has to carry its own
+   height or the box collapses to nothing. What it must NOT carry
+   is a radius, a fill, or an overflow clip: those belonged to the
+   frame when the frame was the picture, and here the picture is
+   the card. A clip in particular would cut the lift off at the
+   top edge, which is the one part of this that has to be seen
+   leaving.
+
+   The three deck numbers are component dimensions, not spacing —
+   how far one card sits behind the next — so they are set here in
+   rem rather than taken from the space scale.
+
+   --stack-shrink is unitless on purpose: it is multiplied by the
+   depth and fed to scale(), which takes a number and not a
+   length. */
+.process__media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  margin-top: var(--space-5);
+
+  --stack-step:   1.5rem;    /* 24px — how far down each card behind sits */
+  --stack-shrink: 0.045;     /* and how much narrower, per step of depth.
+                                Both are deliberately past the point of
+                                subtlety. At 16px and 0.032 the cards
+                                behind showed as a 16px strip under the
+                                front one and read as a misprint rather
+                                than a stack — the offset has to be large
+                                enough that the SHAPE of a card behind is
+                                legible, not just its edge. */
+  --stack-peek:   3rem;      /* 48px — the room the two visible cards
+                                behind the front one need at the bottom.
+                                Two steps exactly: past depth 2 a card is
+                                faded out, so it needs no room. */
+}
+
+/* The card. inset leaves --stack-peek clear at the bottom, so the
+   front card is the stage minus that strip and the cards behind
+   have somewhere to be.
+
+   transform-origin at the bottom centre is what makes the deck
+   read as a deck. Scaled from the centre, a card behind would
+   pull its bottom edge UP and away from the peek strip the inset
+   just made for it; scaled from the bottom, the bottom edges stay
+   put and the shrink shows as the card being narrower — which is
+   what "further away" looks like.
+
+   z-index descends with depth so the front card is on top. 20 is
+   an arbitrary ceiling with room under it for four; .is-spent
+   below goes above the whole deck, because a card being lifted
+   off passes over the ones it was sitting on.
+
+   opacity is the depth cutoff. calc goes negative at depth 4 and
+   the browser clamps it, so this holds for a deck of any size:
+   depth 0-2 fully on, 3 and deeper off. A card fades in as the
+   deck moves under it, which is the deck replenishing itself. */
+.process__card {
+  --depth: 0;
+  position: absolute;
+  inset: 0 0 var(--stack-peek) 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;                        /* the clip belongs HERE */
+  background: var(--color-bg-tertiary);    /* holds the shape while it loads */
+  box-shadow: var(--lift-lg);
+  transform-origin: 50% 100%;
+  transform: translate3d(0, calc(var(--depth) * var(--stack-step)), 0)
+             scale(calc(1 - var(--depth) * var(--stack-shrink)));
+  opacity: calc(1 - max(0, var(--depth) - 2));
+  z-index: calc(20 - var(--depth));
+}
+
+/* Spent — the card for an amenity you have already read, lifted
+   up and off the front of the deck.
+
+   The distance is a percentage of the card's own height, so it
+   holds at every viewport the pinned stage gets clamped to. It is
+   deliberately short of a full card height: the opacity below
+   takes the card out long before the transform finishes, so the
+   travel only has to be far enough to read as a lift, and a
+   longer one would send a still-visible card up over the section
+   above.
+
+   The rotation is the whole reason this reads as a hand lifting a
+   card rather than a div sliding on a rail. It has to stay under
+   about two degrees — past that it is a gesture, and a gesture
+   repeated four times down a page becomes a mannerism. */
+.process__card.is-spent {
+  transform: translate3d(0, -72%, 0) scale(0.96) rotate(-1.2deg);
+  opacity: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.process__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The shade that puts a card behind the front one. A photograph
+   at full strength does not read as being further back however
+   small you scale it — the eye takes brightness as distance
+   before it takes size.
+
+   A pseudo element at a transitioning opacity rather than
+   filter: brightness() on the card, because opacity composites
+   and brightness repaints, and this is riding a scroll. Tied to
+   --depth, so it deepens with each card back and lifts to nothing
+   on the front one without needing a class of its own.
+
+   0.34 per step of depth, against a scrim that is itself 50%
+   black, so a card one back is under 17% black and two back under
+   34%. It was 0.45 while the deck offset was still 16px and the
+   shade was carrying most of the "further away" on its own; with
+   the offset at 24px the geometry does that work, and 0.45 took
+   the second card down to 45% black — a shadow rather than a
+   photograph. The shade only has to help now. */
+.process__card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-overlay-scrim);
+  opacity: calc(var(--depth) * 0.34);
+  pointer-events: none;
+}
+
+/* Nothing has run yet, or nothing ever will because script.js did
+   not load. Either way the first photo is the one to show, flat
+   and on its own — without this the stage is four cards at depth
+   0 on top of each other and the last one in the DOM wins.
+
+   The deck is the enhancement; a single photograph is the thing
+   it enhances. Same fallback the crossfade had. */
+.process__media:not(.is-enhanced) .process__card             { opacity: 0; }
+.process__media:not(.is-enhanced) .process__card:first-child { opacity: 1; }
+
+/* THE PHONE LAYOUT: the frame is off and each amenity carries its
+   own photo.
+
+   The pinned version was written for a phone and it does work,
+   but it spends a third of a short screen on a picture that is
+   holding still while the thing it illustrates scrolls past it —
+   the pairing has to be inferred from the timing. One photo per
+   amenity says the same thing by adjacency, which is the version
+   that needs no inference, and it costs nothing: the four files
+   are the ones the frame was already loading.
+
+   Both are in the DOM at every width and the display switch picks
+   one, rather than the markup differing per breakpoint. Below
+   1024px the frame is off and these are on; the desktop block
+   swaps them back. */
+.process__media { display: none; }
+
+.process__step-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-tertiary);   /* holds the shape while it loads */
+
+  /* The cap is for one case and it is not a phone: a desktop-width
+     window too short for the pinned layout falls back to here, and
+     width: 100% of a 1200px container is a 1200x900 photograph per
+     amenity. 32rem matches the cap .process__media already carries
+     for the same reason. A phone is narrower than this, so nothing
+     changes there. */
+  max-width: 32rem;
+}
+
+.process__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: step;
+}
+
+/* The CTA, phone version: full width under the last amenity, at
+   the bottom of the section.
+
+   Full width because every other block in this layout is —
+   each amenity is a full-width photograph with its name under it
+   — and an auto-width button under a run of those reads as a
+   loose fragment. It is also the friendlier tap target.
+
+   The 32rem cap is the same one .process__step-photo carries and
+   it is there for the same case: a desktop-width window too short
+   for the pinned layout falls back to here, and a 1200px-wide
+   button is not a button. A phone is narrower than the cap, so
+   nothing changes there.
+
+   margin-top rather than relying on a gap: this is the phone
+   layout, where .process__col has dissolved and there is no flex
+   container left to own the spacing. */
+.process__cta {
+  display: block;
+  width: 100%;
+  max-width: 32rem;
+  margin-top: var(--space-6);
+}
+
+.process__step {
+  counter-increment: step;
+  padding-block: var(--space-5);
+}
+
+/* Drawn by CSS, not typed into the markup, so adding or deleting
+   a step renumbers the rest on its own. An explicit counter
+   rather than the list-item one <ol> already keeps: list-item
+   only increments on elements still at display: list-item, and
+   these <li>s are not. */
+.process__step::before {
+  content: counter(step, decimal-leading-zero);
+  display: block;
+  margin-bottom: var(--space-2);
+  font-family: var(--font-display);
+
+  /* 16px, and the size CHANGES WHICH CONTRAST RULE APPLIES to it —
+     which is the one thing to know before touching this line.
+
+     It used to be --fs-display-lg, 48px, where the numeral was
+     WCAG large text and its floor was 3:1. At 16px it is ordinary
+     body-sized text and the floor is 4.5:1. That is why the
+     inactive numeral is faded to its own 0.58 further down rather
+     than sharing the title's 0.50: at 0.50 a 16px numeral measures
+     4.03:1 and fails, where a 24px title at the same 0.50 measures
+     4.13:1 and passes, because the title is still large text.
+
+     Anything above 24px would put it back under the 3:1 rule and
+     the two could share one number again. Between 16 and 24 they
+     cannot. */
+  font-size: 1rem;
+  line-height: 1;
+
+  /* Primary, not brand, and the brand comes back on the active step
+     below. This is the swap that lets the numeral join the dim at
+     all: --color-text-brand measures 3.04:1 on the worst patch of
+     this section's wash — a 48px numeral's floor is 3:1, so it is
+     sitting ON the limit and has nothing to fade into.
+     --color-text-primary is 4.69:1 on the same patch and does. */
+  color: var(--color-text-primary);
+}
+
+/* The brand hue is the active step's badge now rather than every
+   step's decoration, which is a better use of it: four teal
+   numerals said "these are numerals", one says "you are here".
+
+   NOT --color-text-brand itself, though, and the reason is
+   measured. That token is defined as the first brand step that
+   passes AA, so it sits on its floor by construction and has
+   nothing in hand — on the worst patch of this section's wash it
+   comes out at 3.04:1 against a 48px numeral's 3:1. Passing, and
+   passing by 0.04, which is not a margin.
+
+   Mixed halfway into --color-text-primary it renders #D4E1E4 and
+   measures 3.85:1 on the same patch. That keeps the hue shift that
+   does the actual signalling — the numeral reads visibly cooler
+   than the white beside it — and buys back most of the headroom.
+   The fallback declaration above it is for a browser without
+   color-mix, which gets the plain near-white and loses only the
+   tint.
+
+   in oklab rather than srgb so the mix stays on a perceptual
+   ramp: in srgb a light desaturated teal mixed with a near-white
+   dips through a duller middle, and half the point of this is
+   that the hue reads cleanly at a glance. */
+.process__step.is-active::before {
+  color: var(--color-text-primary);
+  color: color-mix(in oklab, var(--color-text-brand) 50%, var(--color-text-primary));
+}
+
+.process__title { color: var(--color-text-primary); }
+
+/* Primary, not secondary, and the dimming below is the reason.
+   --color-text-secondary measures 5.10:1 on this ground at full
+   strength, which is a fine AA pass until something takes a
+   fraction of it away: at 0.85 opacity it is 4.14:1 and at the
+   0.55 an inactive step wants it is 2.66:1. There is simply no
+   headroom in it to dim into, and WCAG has no exemption for text
+   that is merely de-emphasised.
+
+   The hero settled the same argument the same way — see the note
+   above .hero-offer__title. Hierarchy between a heading and its
+   body copy comes from size, weight and family, all of which are
+   already doing the work here; colour was never carrying it. */
+.process__desc {
+  margin-top: var(--space-2);
+  max-width: 34rem;
+  color: var(--color-text-primary);
+}
+
+.process__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  background: var(--color-bg-brand-muted);
+  border: 1px solid var(--color-border-default);
+  color: var(--color-text-primary);
+}
+
+/* Pinned flush to the top rather than inset by a gutter. An
+   offset leaves a strip of section background above the photo,
+   and the list scrolling underneath shows through it — a band of
+   sliced text riding along above the picture. At 0 the photo's
+   own top edge is the screen's and there is no strip. */
+.process__media {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  aspect-ratio: 16 / 9;                   /* ~200px on a phone: a third of the
+                                             screen, leaving the list the rest */
+  margin-bottom: var(--space-5);
+
+  /* The cap is about height, but it is set on width, because the
+     ratio is what turns one into the other. A phone is narrower
+     than 32rem so nothing happens there; a 1023px window is not,
+     and uncapped the photo went 991x557 — 62% of the screen,
+     pinned, with the list reading through what was left. Capping
+     the height directly would hold the width and flatten the
+     frame to 3:1 instead, which is no better for a photograph.
+     Left aligned rather than centred so its edge stays on the
+     heading's. */
+  max-width: 32rem;
+}
+
+/* Dimming the inactive steps is an enhancement, so it is scoped
+   to the class script.js adds. Without JS every step stays at
+   full strength and the section is a plain numbered list, which
+   is the correct thing for it to fall back to.
+
+   0.50, AND IT COST SOMETHING TO GET THERE. The fade was 0.68 for
+   one reason: that was the floor the section's ground allowed.
+
+   The measurement that matters is against the ground actually
+   BEHIND THE GLYPHS, not against --color-bg-secondary. The flat
+   token is #41464E, but the section's blurred wash sits on top of
+   it, and with the veil alone the worst patch the copy crossed
+   composited to #68706F — light enough that near-white at 0.68
+   measured 3.11:1 and at 0.65 measured 2.99:1 and failed. There
+   was no room in it.
+
+   What bought the room was .section--process::after, the copy
+   scrim, which is why that layer is not optional. With it the
+   worst ground behind the copy is around #2D3234 and the numbers
+   are these:
+
+     --color-text-primary  full     11.96:1
+                           at 0.50   4.13:1
+     the active numeral    full     10.22:1
+       (#D4E1E4, the 50% brand mix)
+     the inactive numeral  at 0.50   4.33:1 pinned,
+                                     3.93:1 unpinned
+     the eyebrow           full      5.33:1  (4.5 floor — 14px)
+     the subhead           full      7.25:1  (4.5 floor)
+
+   Both the numeral and the title are WCAG large text — the
+   numeral at 28-48px, the title at 24px/400 — so the floor they
+   clear is 3:1 and not 4.5. 0.50 clears it by 1.13.
+
+   THE FADE STOPS AT 0.50 BY CHOICE, not by the ceiling: there is
+   now room for 0.45, which measured 3.13:1 before the scrim's
+   ramp was lengthened and would sit near 3.6:1 today. It is held
+   back because the margin is worth more than the extra 5%. The
+   inputs here are a photograph, a webfont and a browser's
+   antialiasing, none of which this file controls, and a fade
+   sitting 0.1 above a legal floor is one font substitution away
+   from being under it. If a deeper fade is ever wanted, re-run
+   the sampler below before taking it — do not reason about it.
+
+   ALL OF THESE ARE READ OFF RENDERED PIXELS, not computed: 303
+   samples, seven viewports from 390x844 to 1920x1080 covering the
+   pinned layout, the phone layout and the short-window fallback,
+   six positions along the scroll track, all four steps, comparing
+   the brightest pixel of each glyph against the brightest pixel
+   of the ground behind it — with the copy hidden for the second
+   half of each pair, so the ground is the real composite of
+   section, wash, veil and scrim rather than a token.
+
+   Two traps if you re-run it. The numeral is a ::before and has no
+   box to measure, so it has to be sampled as a band — and on the
+   phone layout that band is ABOVE the per-step photograph, not
+   directly above the title the way it is up here; aim it at the
+   title and you measure the photograph against itself and get a
+   meaningless 1:1. And a step scrolled off the edge returns bare
+   ground for both halves of the pair, which also reads as 1:1 —
+   discard any sample whose glyph is not brighter than its ground
+   rather than counting it as a failure.
+
+   That last part is why the figures here are trustworthy and the
+   ones this comment used to carry were not. The original numbers
+   were computed against --color-bg-secondary, the flat token, and
+   overstated every result by two to three stops: the dimmed title
+   was documented at 5.08:1 and was in fact shipping at 3.11:1.
+   The ground in this section is a photograph. Measure it.
+
+   The numeral is IN the fade, which it was not originally. That
+   needed the colour swap above: brand at 3.04:1 on the old ground
+   had no headroom to dim into, primary did, and the brand hue
+   moved to the active step where it reads as a position marker.
+   The numerals fading with their titles is what makes an inactive
+   step read as one dim block rather than a bright number with
+   faint text under it.
+
+   opacity on the ::before rather than on the <li>, because
+   opacity on a parent cannot be undone by a child — dimming the
+   step itself would take the active row's numeral down with it. */
+.process__steps.is-enhanced .process__title,
+.process__steps.is-enhanced .process__desc,
+.process__steps.is-enhanced .process__chips { opacity: 0.50; }
+
+/* THE NUMERAL FADES ONE STEP LESS THAN ITS TITLE, and the two
+   numbers differ for a reason that is not aesthetic.
+
+   The numeral is 16px. The title is 24px. 24px is the WCAG
+   large-text threshold, so the title clears a 3:1 floor and the
+   numeral has to clear 4.5:1 — a harder target on the same
+   ground, at the same colour, in the same row. Measured on the
+   worst patch the copy crosses:
+
+     16px numeral at 0.50   4.03:1 unpinned   <- fails 4.5
+                    at 0.55   4.53:1          <- clears, barely
+                    at 0.58   4.85:1
+     24px title   at 0.50   4.13:1            <- clears 3:1
+
+   0.58 is the first value with a real margin at every viewport,
+   pinned and unpinned. It is close enough to the title's 0.50
+   that the row still reads as one dim block — the gap is about
+   8% of white, well under what the eye separates at this size —
+   and it is the difference between the number being legible and
+   not.
+
+   If the numeral is ever put back above 24px, delete this rule:
+   it goes back under the 3:1 floor and can share the 0.50. */
+.process__steps.is-enhanced .process__step::before { opacity: 0.58; }
+
+.process__steps.is-enhanced .process__step.is-active::before,
+.process__steps.is-enhanced .is-active .process__title,
+.process__steps.is-enhanced .is-active .process__desc,
+.process__steps.is-enhanced .is-active .process__chips { opacity: 1; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* --dur-reveal, not --dur-crossfade. The crossfade token is 1200ms
+     and it was right for a dissolve, where the eye has nothing to
+     track and a slow one reads as editorial. A card being lifted is
+     a movement with a start and an end, and 1200ms of it reads as
+     the page being slow rather than the card being heavy. 560ms is
+     long for UI and correct here: this is explanatory motion, seen
+     three times in a section, not a control being operated.
+
+     Named properties rather than `all`, so the ::after shade and
+     the box-shadow are not dragged into the same timing. */
+  .process__card {
+    transition: transform var(--dur-reveal) var(--ease-out),
+                opacity   var(--dur-reveal) var(--ease-out);
+  }
+
+  /* The one asymmetry, and it is what keeps the lift on the stage.
+     The transform still runs the full 560ms, but the fade is over
+     in about 310ms — so the card is gone well before the travel
+     finishes and never gets far enough up the page to be seen
+     crossing the section above.
+
+     Derived from the token rather than typed as 310ms, so retuning
+     --dur-reveal keeps the two in proportion. */
+  .process__card.is-spent {
+    transition: transform var(--dur-reveal) var(--ease-out),
+                opacity   calc(var(--dur-reveal) * 0.55) var(--ease-out);
+  }
+
+  .process__card::after   { transition: opacity var(--dur-reveal) var(--ease-out); }
+  .process__backdrop-img  { transition: opacity var(--dur-crossfade) var(--ease-in-out); }
+
+  /* THE HIGHLIGHT IS ASYMMETRIC, and it is worth saying why
+     rather than leaving it as two numbers that happen to differ.
+
+     Symmetrically, both at --dur-reveal, the outgoing amenity
+     fades down while the incoming one fades up over the same
+     560ms — and for most of that half second neither of them is
+     lit. Caught at 150ms into a step change the whole list read
+     as uniformly dim, which is the one state it is supposed to
+     never be in: the highlight exists to answer "where am I", and
+     for half a second it answered "nowhere".
+
+     So lighting up is quick — --dur-ui, the page's control-
+     feedback duration — and fading back is unhurried. The list
+     always has something clearly lit, and the amenity you have
+     left dims away behind you rather than trading places.
+
+     This works by specificity and not by a second property: the
+     `.is-active` rules below are the destination when a step
+     lights up, so their duration is the one that runs; the rules
+     here are the destination when it stops being active, so
+     theirs runs on the way out. */
+  .process__steps.is-enhanced .process__title,
+  .process__steps.is-enhanced .process__desc,
+  .process__steps.is-enhanced .process__chips {
+    transition: opacity var(--dur-reveal) var(--ease-out);
+  }
+
+  /* The numeral has two things changing at once and they want
+     different curves. The fade is a state arriving, so it takes
+     the page's --ease-out with everything else; the hue is a
+     colour change and colour changes take `ease`, because there
+     is no motion in one for a curve to characterise. */
+  .process__steps.is-enhanced .process__step::before {
+    transition: opacity var(--dur-reveal) var(--ease-out),
+                color   var(--dur-reveal) ease;
+  }
+
+  .process__steps.is-enhanced .is-active .process__title,
+  .process__steps.is-enhanced .is-active .process__desc,
+  .process__steps.is-enhanced .is-active .process__chips {
+    transition: opacity var(--dur-ui) var(--ease-out);
+  }
+
+  .process__steps.is-enhanced .process__step.is-active::before {
+    transition: opacity var(--dur-ui) var(--ease-out),
+                color   var(--dur-ui) ease;
+  }
+}
+
+/* Reduced motion keeps the pairing and loses the movement, which
+   is what the setting actually asks for — not "no animation".
+   The deck stops being a deck: no lift, no offset, no shrink, no
+   shade. The cards go back to a plain opacity crossfade, so
+   reaching an amenity still changes the picture beside it and the
+   section still says what it says. Only the travel is gone.
+
+   This is a change from the old behaviour, which froze on the
+   first photograph. Freezing was over-cautious: an opacity
+   transition is not motion, and the cost of it was that a
+   motion-sensitive reader got one picture for four amenities.
+
+   The wash is the exception and still holds on the first. It is
+   the whole section's ground going a new colour, which is a much
+   larger area of change than a card inside a column, and the
+   crossfade that carries it is 1200ms of the page shifting hue
+   underneath the copy being read. */
+@media (prefers-reduced-motion: reduce) {
+  .process__card {
+    transform: none;
+    opacity: 0;
+    z-index: 1;
+    transition: opacity var(--dur-reveal) var(--ease-out);
+  }
+  .process__card.is-active { opacity: 1; z-index: 2; }
+  .process__card.is-spent  { opacity: 0; transform: none; }
+  .process__card::after    { opacity: 0; }
+
+  .process__backdrop .process__backdrop-img             { opacity: 0; }
+  .process__backdrop .process__backdrop-img:first-child { opacity: 1; }
+
+  .process__steps.is-enhanced .process__step::before,
+  .process__steps.is-enhanced .process__title,
+  .process__steps.is-enhanced .process__desc,
+  .process__steps.is-enhanced .process__chips { opacity: 1; }
+}
+
+/* 6 · Tall photo card — the photo is the whole card
+   ------------------------------------------------------------
+   Local favourites wears this. Amenities used to as well, and the
+   rules are still written to be shared, so a future section can
+   pick it up without any of them being touched.
+
+   Not a thumbnail with a caption under it: the name is pinned to
+   the top left of the image and the description rides in a panel
+   across the bottom. Both sit on a photo the template has never
+   seen, so legibility is bought twice — once by the scrim below,
+   once by the panel's own fill.
+
+   display: block is for the favourites, where the card is an <a>
+   rather than a <figure>. As a flex item it would be blockified
+   anyway; it is written out so the rule does not quietly depend
+   on the card always living inside a flex track. The <a> needs
+   nothing else — the global reset at the top of this file already
+   strips its underline and colour, and the global :focus-visible
+   outline draws outside overflow: hidden, so tabbing to a
+   favourite still shows a ring.
+
+   The card clips its own corners rather than the image doing it,
+   which is what lets the image scale on hover without a square
+   corner sliding out from under the radius. */
+.tall-card {
+  position: relative;
+  display: block;
+  isolation: isolate;                     /* keeps the z-index local */
+  width: 18rem;                           /* 288px */
+  aspect-ratio: 3 / 4;                    /* matches the 576x784 art */
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-tertiary);   /* holds the shape while the photo loads */
+}
+
+.tall-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Two gradients. The first carries the title, which has no fill
+   of its own behind it.
+
+   Stops in rem, not percentages, and that is the load bearing
+   detail. The title sits 16px from the top and is ~28px tall at
+   every size the card comes in; the card itself is 416px tall on
+   desktop and 288px on a phone. Percentage stops rescale with the
+   card and the phone's shorter card drags the whole ramp up over
+   the words — measured, that cost about 0.6:1. Absolute stops put
+   the dark exactly where the text is on both.
+
+   0.68 through the title band is not a taste choice either. White
+   at --color-overlay-text needs the ground under it at or below
+   about #707070 to clear 4.5:1, and over the worst case photo — a
+   blown out white sky — 0.68 lands it at #595959. The mobile
+   title is 18px semibold, a hair under the 18.66px the large text
+   exemption starts at, so 4.5:1 is the bar it has to clear rather
+   than 3:1.
+
+   An ellipse in the corner was tried first, on the theory that
+   spending the darkness only where the words are would leave more
+   of the photo alone. It did neither: the falloff missed the end
+   of a longer title, which measured 1.77:1, and on a wide card
+   the shape read as a smear rather than as shading. A band has no
+   shape to notice.
+
+   The second gradient grounds the bottom so the panel does not
+   look pasted on, and it is in rem for a second reason on top of
+   the first. It used to end at 42% of the card. On the 416px
+   desktop card that left a clear band of untouched photo in the
+   middle; on the 288px phone card 42% reached 121px up, the top
+   band reached 176px down, and the two met — every pixel of the
+   card was under one scrim or the other and the photograph had
+   nowhere left to show. Both measured from their own edge now, so
+   the gap between them grows with the card instead of closing. */
+.tall-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom,
+      rgba(9, 11, 14, 0.76) 0,
+      rgba(9, 11, 14, 0.68) 4rem,      /* 64px — clears the title */
+      rgba(9, 11, 14, 0.24) 6.5rem,
+      var(--hero-scrim-0)   9rem),
+    linear-gradient(to top,
+      rgba(9, 11, 14, 0.42) 0,          /* was --hero-scrim-2, which the hero
+                                           has since taken down to 0.18. A
+                                           literal, like the three above it in
+                                           this same rule — the card's numbers
+                                           are measured against the card. */
+      var(--hero-scrim-0) 6rem);
+}
+
+/* space-between does the placing: title to the top edge, panel to
+   the bottom, whatever the card's height. The panel keeps its
+   space even while hidden — it is faded, not removed — so the
+   title never shifts when the reveal fires. */
+.tall-card__caption {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+/* No fill behind it — the title sits on the photograph itself, and
+   the corner scrim above is what keeps it readable. The shadow is
+   a second line of defence rather than the main one: WCAG's
+   contrast maths ignores text-shadow entirely, so it earns
+   nothing on paper and is here only for the case the scrim was
+   not built for — a photo with a small bright hotspot right under
+   the words, which no full-corner wash can flatten. */
+.tall-card__title {
+  align-self: flex-start;
+  max-width: 100%;
+  color: var(--color-overlay-text);
+  text-shadow:
+    0 1px 2px  rgba(8, 10, 13, 0.62),
+    0 2px 18px rgba(8, 10, 13, 0.48);
+}
+
+.tall-card__panel {
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  background: var(--card-panel);
+  border: 1px solid var(--card-panel-edge);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.tall-card__desc { display: block; color: var(--color-overlay-fg); }
+
+/* ---- the photo rows on a phone: stacked, not swiped -------------
+   Both .slider--even rows — amenities and local favourites.
+   Featured Stays stays a swipe strip at this width. These do not,
+   and the trade is deliberate: a strip shows one and a bit cards
+   and hides the rest behind a gesture nothing on screen
+   announces, where a stack shows all four in the scroll the
+   reader is already doing. Amenities and favourites are lists to
+   be read rather than sets to be browsed, so neither needs the
+   strip's ability to hold twelve cards in one row.
+
+   overflow-x back to visible and the snap axis off, or the track
+   stays a scroll container with a stacked column inside it — the
+   drag handler in script.js is mouse only and writes scrollLeft,
+   which is inert once there is nothing to scroll sideways. */
+.slider--even .slider__track {
+  flex-direction: column;
+  overflow-x: visible;
+  scroll-snap-type: none;
+  gap: var(--space-3);
+}
+
+/* width auto so the column's default stretch takes them the full
+   width of the track, and the ratio dropped for a fixed height —
+   at full width 3:4 would make each card ~457px tall and put the
+   four of them over 1900px of scrolling on a phone. */
+.slider--even .tall-card {
+  width: auto;
+  aspect-ratio: auto;
+  height: 18rem;                          /* 288px */
+}
+
+/* ---- the photo rows, the tablet step ----------------------------
+   Has to sit after the stack above rather than up with the other
+   768px rules, and the reason is plain cascade order: these two
+   blocks have equal specificity, a media query adds none, so
+   whichever is written last wins. Written first, `flex-direction:
+   row` here lost to `column` above at every width — the track
+   stayed a column, `flex: 1 1 0` applied its basis to the card's
+   HEIGHT instead of its width, and every card computed to 1168x0.
+
+   What it does: break the stack before the four across row
+   starts. A stacked card is full width against a fixed height, so
+   the wider the viewport the flatter it gets — 343x288 on a phone
+   is fine, 735x288 at the top of the stacked range is a 2.5:1
+   letterbox, and left running to 900px it reaches 868x288 and
+   crops a portrait amenity photo down to a band.
+
+   640px, not 768px, for that reason: it is where the stacked card
+   passes 2:1, and every 100px past it is worse. Two up rather
+   than the four this becomes at 1024, because four across at this
+   width is a ~166px card and a two word amenity name does not fit
+   that.
+
+   22rem holds the pair between 292x352 at 640px and 483x352 just
+   under 1024px — portrait at one end, mildly landscape at the
+   other, and never the letterbox. A ratio instead of a height
+   would be the obvious move and is the wrong one: at the top of
+   this range it computes a 644px tall card, taller than the
+   desktop one it is a step down from.
+
+   The track sits outside .container so it can bleed edge to edge
+   as a strip on a phone, so the column has to be put back by hand
+   the moment the cards form a row: the same max width and auto
+   margins .container uses, the gutter already coming from
+   .slider__track's padding. Without it the row runs to the screen
+   edges under a heading boxed at 1200px. */
+@media (min-width: 640px) {
+  .slider--even .slider__track {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    max-width: var(--container-max);
+    margin-inline: auto;
+  }
+  .slider--even .slider__track > * {
+    flex: 1 1 calc(50% - var(--space-4));
+    min-width: 0;
+  }
+  .slider--even .tall-card { width: auto; height: 22rem; }   /* 352px */
+}
+
+/* The reveal is a mouse affordance, and nothing is locked behind
+   it. Everywhere a fine pointer is not certain the panel is
+   simply always on — which is the case that matters most here,
+   because this is a link in bio page and most of its traffic
+   arrives on a phone. Hover does not exist there, so a hover
+   gated description would be unreachable, not subtle.
+
+   Faded with opacity rather than display or visibility on
+   purpose: those two drop the description out of the
+   accessibility tree and a screen reader loses it along with the
+   mouse. At opacity 0 it is still announced. */
+@media (hover: hover) and (pointer: fine) {
+  .tall-card__panel { opacity: 0; }
+  .tall-card:hover .tall-card__panel,
+  .tall-card:focus-within .tall-card__panel { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tall-card__img   { transition: transform var(--dur-reveal) var(--ease-out); }
+  .tall-card__panel { transition: opacity   var(--dur-reveal) var(--ease-out),
+                                  transform var(--dur-reveal) var(--ease-out); }
+}
+
+/* The panel rises the last few pixels into place and the photo
+   creeps up a hair under it. Both are decoration on top of a
+   state change that has already happened, so both sit inside the
+   no-preference guard and neither is load bearing. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .tall-card__panel                 { transform: translateY(var(--space-2)); }
+  .tall-card:hover .tall-card__panel,
+  .tall-card:focus-within .tall-card__panel { transform: translateY(0); }
+  .tall-card:hover .tall-card__img  { transform: scale(1.04); }
+}
+
+/* 8 · Review card
+   ------------------------------------------------------------
+   The card sits inside .panel, which carries data-theme="light",
+   so every token below resolves against the white panel rather
+   than the dark page. That is what lets one rule set describe a
+   raised surface without naming a single colour: secondary to
+   tertiary is a half step up from the panel's primary, and the
+   hairline does the rest.
+
+   Rating on top, quote in the middle, guest at the foot. The
+   order is deliberate — the score is the thing a skimmer reads,
+   the name is the thing that makes the quote credible, and the
+   quote only earns its length once both are established. */
+.review {
+  display: flex;
+  flex-direction: column;
+  /* 320px on a phone. Wide enough for four or five words a line,
+     which is where a quote stops reading like a caption, and
+     narrow enough to leave the next card's edge showing. */
+  width: min(20rem, calc(100vw - var(--space-9)));
+  /* Recessed rather than raised: the panel is brand-800, and a card
+     one step LIGHTER (brand-700) drops the quote's secondary text to
+     3.3:1. Two steps down the same ramp holds 8.2:1 at the dark end
+     and 5.3:1 at the light one, and the card still reads as its own
+     surface — a 1.9:1 luminance step off the panel. */
+  background: linear-gradient(
+    150deg,
+    var(--brand-950) 0%,
+    var(--brand-900) 100%
+  );
+  border: 1px solid var(--brand-700);
+  /* The card is darker than the panel, so the ramp's own text values
+     apply again here rather than the panel's lightened ones. */
+  --color-text-secondary: var(--gray-300);
+  --color-text-tertiary:  var(--gray-400);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  padding: var(--space-4);
+  text-align: left;
+}
+
+/* --space-1 is the icon gap the scale exists for. The score is
+   pushed off the last star by a full step so it reads as a
+   separate fact and not a sixth glyph. */
+.review__rating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-fg-rating);
+  margin-bottom: var(--space-3);
+}
+/* Secondary, not tertiary. The reference builds its three tier
+   hierarchy purely out of lightness, which works on its dark card
+   and does not survive the trip to a light one: gray-600 at 14px
+   lands on 3.2:1 against the foot of the card's gradient, short
+   of the 4.5:1 that small text owes. Every 14px line here is
+   secondary, and the hierarchy comes from position and weight
+   instead — which is the more durable way to build one anyway. */
+.review__score {
+  margin-left: var(--space-2);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* margin-top: auto pins the guest to the bottom edge, so a short
+   quote and a long one still line their avatars up across the
+   rail. Without it a two line review floats its name halfway up
+   the card and the row looks broken. */
+.review__body  { color: var(--color-text-secondary); margin-bottom: var(--space-4); }
+.review__guest { display: flex; align-items: center; gap: var(--space-3); margin-top: auto; }
+
+/* 56px. An object dimension, not spacing — the same exemption
+   the icon boxes and the field heights take. */
+.review__avatar {
+  flex: 0 0 auto;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.review__when { color: var(--color-text-secondary); }
+.review__unit { color: var(--color-text-secondary); }
+
+/* 8 · Review rail
+   ------------------------------------------------------------
+   A scroll track that nothing moves on its own. A thumb swipes
+   it; where there is a mouse, the arrows under it step it a card
+   at a time.
+
+   IT USED TO SCROLL ITSELF, on a 60s loop built from two cloned
+   copies of the cards translated -50%, with hover as the only
+   stop control. That is gone, and what went with it is worth
+   knowing because it removed three separate constraints:
+
+     · The clone. The card count had to be EVEN or the loop's
+       seam did not line up. Any count works now.
+     · The LEFT edge fade. On a snapped track the first card rests
+       flush against the panel's inner edge, so a fade there sits
+       on top of it and washes out the start of every line the
+       reader is actually trying to read. The right one is kept
+       below — see the note on it.
+     · The hover-and-focus-within pause, which was there because
+       motion a reader cannot stop fails WCAG 2.2.2. Nothing moves
+       unless the reader moves it, so the requirement no longer
+       applies rather than being satisfied by a workaround. */
+.review-rail { position: relative; margin-top: var(--space-5); }
+
+.review-rail__viewport {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: var(--container-x);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.review-rail__viewport::-webkit-scrollbar { display: none; }
+
+.review-rail__track {
+  display: flex;
+  align-items: stretch;
+  width: max-content;
+  padding-inline: var(--container-x);
+}
+
+/* The gap is a margin on each card rather than a flex gap on the
+   track, and that is load bearing for the loop further down: a
+   flex gap sits BETWEEN items, so ten cards carry nine gaps, and
+   half of nine is not a whole number. Ten margins split evenly.
+   Do not swap it back to gap.
+
+   "none start" for the same reason the other rails use it — the
+   one word shorthand would set the block axis too and turn every
+   card into a vertical snap point. */
+.review-rail__track > * {
+  margin-right: var(--space-3);
+  scroll-snap-align: none start;
+}
+
+/* THE RIGHT EDGE ONLY. The card at the right of the rail is being
+   cut off mid-sentence — that is what says "there is more" — but
+   cut with a hard vertical line it reads as a rendering fault
+   rather than as content continuing, and the arrows underneath
+   are not enough on their own to explain it.
+
+   Left is deliberately bare. The first card snaps flush to the
+   panel's inner edge, so a fade on that side would lie over the
+   opening words of every review. This asymmetry is the point: the
+   two edges are not doing the same job.
+
+   --brand-800 is the panel's own ground, and a gradient has to
+   start at the exact colour behind it or it reads as a band
+   rather than a fade. Not --color-bg-primary, which resolves to
+   the panel's white here because .panel carries data-theme.
+
+   z-index over the cards but pointer-events off, so it never
+   swallows a click on the review underneath or blocks a swipe. */
+.review-rail::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  width: var(--space-5);                  /* 32px — 64px at desktop */
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(to left, var(--brand-800) 0%, transparent 100%);
+}
+
+
+/* ============================================================
+   6 · LOCAL FAVOURITES
+   No rules of its own — the section reuses .slider--even and
+   .tall-card from section 5 above, so the two rows stay identical
+   by construction rather than by upkeep.
+   ============================================================ */
+
+/* ============================================================
+   7 · LOCATION
+   ------------------------------------------------------------
+   The intro is centred like every other section heading on the
+   page; the pair below it — detail column and map — is the part
+   that stays on a grid. Centre the intro as one block: eyebrow,
+   heading and lead share the same axis, and the lead keeps its
+   measure by margin rather than by moving off it.
+   ============================================================ */
+.location-intro {
+  max-width: 56rem;
+  margin-inline: auto;
+  margin-bottom: var(--space-7);
+  text-align: center;
+}
+
+/* The label on its own, on the block's axis. No hairline: the
+   rule was there to anchor a left edge, and there is no left
+   edge to anchor now. */
+.location-intro__eyebrow {
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--space-4);
+}
+
+.location-intro__title {
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-4);
+}
+
+/* The span stays a block so a second line could be added back
+   without it running on. text-wrap: balance comes in with
+   .type-section-title and is left alone — centred, the balanced
+   wrap is what keeps the last line from stranding a word. */
+.location-intro__line {
+  display: block;
+}
+
+/* The measure is kept, the centring is not given up: auto margins
+   hold the column on the intro's axis. 600px rather than a ch
+   measure because the cap is a layout decision here, not a
+   reading one — it is the width the lead is allowed to be under
+   a centred heading, independent of the face's character width. */
+.location-intro__lead {
+  color: var(--color-text-secondary);
+  max-width: 37.5rem;                     /* 600px */
+  margin-inline: auto;
+}
+
+/* ---- the address / map pair ------------------------------------
+   One column on a phone, a third and two thirds side by side once
+   there is room. The map is the second grid child and the grid
+   stretches by default, so the map's height is the detail
+   column's height — it is never told a desktop height of its own.
+---------------------------------------------------------------- */
+.location-grid {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.location-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ---- the address card ---- */
+/* Accent-subtle, not bg-secondary: this section's ground is the
+   accent ramp, and the neutral surface tokens are a different hue
+   family — a gray card on a warm ground reads as a foreign object
+   pasted on top. One step along the same ramp is the whole
+   differentiation the card needs; the hairline does the rest. */
+/* White on the section's brand-50 ground: one step up the brand ramp
+   would be two near identical light values and the card would stop
+   reading as a card. The hairline does the rest. */
+.address-card {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+/* The name sits directly on the hairline now that the street
+   address is gone, so it needs the wider step under it — 16px
+   would read as a label attached to the rule. */
+.address-card__name {
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-4);
+}
+
+/* The route button is the section's one filled control, so it is
+   .btn--primary and it spans the card. */
+.address-card .btn { width: 100%; }
+
+.address-card .btn .icon { vertical-align: -0.1875em; margin-right: var(--space-2); }
+
+/* ---- the drive times ---- */
+/* A <ul>: three distances are a list, and with no body copy under
+   each row the markers are the only thing to suppress. It sits
+   inside the address card, so the hairline above it separates the
+   distances from the address without making a second card of
+   them — the two answer the same question. */
+.directions {
+  list-style: none;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4) 0 0;
+  border-top: 1px solid var(--color-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.directions__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-text-primary);
+}
+.directions__title .icon { color: var(--color-fg-secondary); }
+
+/* ---- the map frame ----
+   overflow: hidden is what rounds the corners of whatever goes
+   inside, so an <img> placeholder and a live Google iframe get the
+   same frame with no extra rules. */
+.location-map {
+  position: relative;
+  min-height: 25rem;                      /* 400px */
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-bg-accent-subtle);
+}
+.location-map > img,
+.location-map > iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+}
+
+/* A live map arrives in Google's colours, which belong to Google
+   and not to the client. Desaturated it reads as part of the page;
+   full colour on hover, once someone is actually reading it. Add
+   invert(0.92) to the first filter for a dark brand — it turns
+   Google's white paper dark, at the cost of inverting the pins. */
+@media (hover: hover) and (pointer: fine) {
+  .location-map > img,
+  .location-map > iframe {
+    filter: grayscale(1) contrast(0.92);
+    transition: filter var(--dur-crossfade) var(--ease-out);
+  }
+  .location-map:hover > img,
+  .location-map:hover > iframe { filter: none; }
+}
+
+/* ============================================================
+   8 · TESTIMONIAL PANEL — brand-800 on the section's brand-900
+   ============================================================ */
+/* brand-800 on the section's brand-900, with a brand-700 hairline —
+   one ramp, three steps. 0.5px so the edge stays a hairline on a
+   retina screen instead of reading as a drawn frame. */
+.panel {
+  background: var(--brand-800);
+  color: var(--color-text-primary);
+  border: 0.5px solid var(--brand-700);
+  border-radius: var(--radius-lg);
+  /* brand-800 is a mid dark ground: the dark theme's gray-300 lands
+     at 4.28:1 on it and gray-400 at 3.80:1, both short of AA for the
+     eyebrow and the stat labels. Two steps lighter clears it — 6.75:1
+     and 5.92:1 — and keeps the step below text-primary visible. */
+  --color-text-secondary: var(--gray-100);
+  --color-text-tertiary:  var(--gray-200);
+  padding-block: var(--space-5);
+  text-align: center;
+}
+.panel > .eyebrow,
+.panel > .heading { padding-inline: var(--space-4); }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-0);
+}
+/* No chip behind the mark — it sits straight on the panel. That is
+   only legible because the file it points at is the REVERSED cut of
+   the artwork: the supplied PNG carries a near black (#3A3A3C)
+   wordmark, which lands at about 1.4:1 on brand-800 and disappears.
+   super-host-logo-reversed.png is that same file with the neutral
+   wordmark taken to white and the coral and gold left untouched.
+   The original is kept alongside it for a light ground. Swap the src
+   back if this section ever moves onto a light surface. */
+.stats__badge {
+  justify-self: center;
+  width: fit-content;
+}
+.stats__badge img { display: block; max-width: 7rem; height: auto; margin-inline: auto; }
+.stat__number { margin-bottom: var(--space-2); font-variant-numeric: tabular-nums; }
+.stat__label  { color: var(--color-text-secondary); }
+
+/* ============================================================
+   10 · FOOTER
+   ============================================================ */
+.footer {
+  padding: var(--space-5) var(--container-x) var(--space-6);
+  text-align: center;
+  border-top: 1px solid var(--color-border-subtle);
+}
+.footer__label { color: var(--color-text-tertiary); margin-bottom: var(--space-2); }
+.footer__logo img { max-width: 11.5rem; margin-inline: auto; }
+
+/* ============================================================
+   11 · WELCOME  ·  the post sign-up page (welcome.html)
+   ------------------------------------------------------------
+   A modifier on .hero-offer, not a second hero. The video, both
+   scrims, the seam, the logo and the entrance animation are the
+   components section 1 already ships; only three things differ,
+   and each is here for a reason that is written next to it.
+
+   THE ONE THING TO KNOW BEFORE EDITING: the copy is CENTRED on
+   this page and left aligned on the marketing hero, and that is
+   what the scrim override at the bottom of this block is about.
+   The desktop scrim in the breakpoint block is a diagonal,
+   weighted into the left third because that is where the
+   marketing hero's copy lives. Centred copy runs straight out of
+   it and into the bright side of the frame. The override is two
+   classes deep so it beats that rule wherever it sits in the
+   file, and it carries all three of this page's scrim layers —
+   including the copy band, which cannot live on the inner here.
+   The reason why is written over layer 2.
+   ============================================================ */
+.hero-offer.hero-offer--welcome {
+  align-items: center;
+  /* Shorter than the marketing hero at both breakpoints. That one
+     is a banner and wants the room; this one has a job, and the
+     code has to be reachable without a scroll. The content is
+     taller than this number on every viewport anyway — it is a
+     floor that stops a short frame, not a height. */
+  min-height: clamp(28rem, 80svh, 38rem);
+}
+
+/* Centred, and narrower than the frame. The padding is the
+   marketing hero's stepped down: that one pads for a banner, and
+   96px of air above a back link only pushes the code further from
+   the fold. */
+.hero-offer__inner.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-block: var(--space-9);
+}
+
+/* Every string on this page is --color-overlay-text, for the same
+   reason the marketing hero's are: dimming secondary copy to
+   --color-overlay-fg measures ~4.0:1 against the scrim's worst
+   case and fails AA. Hierarchy is carried by size and weight.
+
+   The shadow pair is load bearing and is the same pair, for the
+   same reason — see the note over the hero's title. The 2px layer
+   is a hard edge against whatever is immediately behind a glyph;
+   the 12px layer is the pad that catches a bright patch of
+   footage drifting under a counter. */
+.welcome__title,
+.welcome__lead,
+.welcome__note,
+.back-link {
+  color: var(--color-overlay-text);
+  text-shadow: 0 1px 2px rgba(9, 11, 14, 0.55), 0 2px 12px rgba(9, 11, 14, 0.75);
+}
+
+/* max-width is inherited from .hero-offer__title, which caps at
+   34rem and 38rem. Centred, that is the right measure for a
+   greeting; only the auto margins are new. */
+.welcome__title { margin-inline: auto; }
+
+/* The sign off, and it sits at the FOOT of the copy now rather
+   than over the plate. It keeps body-lg: it is the warmest line
+   on the page and the one that should still read at a glance
+   from across a room, and a full step of space above it is what
+   separates a sign off from the housekeeping it follows. */
+.welcome__lead {
+  max-width: 34rem;
+  margin-inline: auto;
+  margin-top: var(--space-4);
+}
+
+.welcome__note { max-width: 34rem; }
+/* The housekeeping line. One rung down and no dimming — see the
+   colour note above. */
+.welcome__note--fine { margin-top: var(--space-2); }
+
+/* ---- the back link --------------------------------------------
+   Top left of the copy column rather than pinned to the frame's
+   corner: pinned, it would sit on the brightest part of an
+   unvetted photograph with no scrim under it, and it would drift
+   away from everything it belongs to as the viewport widened.
+   align-self pulls it out of the centred column without needing
+   a wrapper.
+
+   The 44px min-height is the WCAG 2.5.8 target size, met by
+   padding rather than by a fixed box so the label can grow. The
+   negative inline margin pulls the glyph's own padding back to
+   the column's left edge, so the chevron optically aligns with
+   the copy below instead of the label's leading edge.
+---------------------------------------------------------------- */
+.back-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;                    /* 44px — a target, not spacing */
+  padding: var(--space-2) var(--space-3);
+  margin-left: calc(var(--space-3) * -1);
+  margin-bottom: var(--space-5);
+  border-radius: var(--radius-md);
+  transition: background-color var(--dur-ui) ease,
+              transform var(--dur-press) var(--ease-out);
+}
+.back-link svg { width: 1rem; height: 1rem; flex: 0 0 auto; }
+.back-link:active { transform: scale(0.98); }
+
+@media (hover: hover) and (pointer: fine) {
+  .back-link:hover { background: var(--color-overlay-fill); }
+}
+
+/* ---- the code plate -------------------------------------------
+   The one thing this page exists to deliver, so it is the one
+   thing on it that does not trust the photograph behind it — and
+   the only bright object on a page that is otherwise footage and
+   white text. That inversion IS the emphasis: nothing else here
+   has to compete with it, so the plate needs no glow and no
+   outline to be the first thing the eye lands on.
+
+   Built to read as a coupon rather than as a form field, which is
+   four things and not one: the brand-50 ground, the dashed accent
+   edge, the notch bitten out of each end, and the code set large
+   and wide-tracked in brand-950 rather than at body size. Drop any
+   one of them and it goes back to looking like an input box that
+   nobody can type in.
+
+   brand-50 is L 0.973 — effectively white with a breath of the
+   brand's teal in it — so the plate is fully opaque and the
+   footage underneath cannot reach the code at all. That is why
+   this block stops using --card-panel: the old pair solved
+   "readable text over an unvetted frame" by blending the frame
+   down to #363636, and an opaque ground solves it outright.
+
+   26rem, not the 34rem the copy runs to. A code is eight
+   characters; a plate three times wider than its contents reads
+   as an empty field waiting to be filled in.
+
+   The bottom margin is deliberately SHORT. The two lines under
+   the plate answer the question the plate raises — where else is
+   this code — and at a full --space-6 they read as an unrelated
+   block stranded further down the frame.
+---------------------------------------------------------------- */
+.code {
+  width: 100%;
+  max-width: 26rem;
+  margin-block: var(--space-6) var(--space-3);
+}
+
+/* align-items: stretch is doing the work — the divider between the
+   code and the button is the button's own left border, and it only
+   runs the full height of the plate because the button is stretched
+   to it.
+
+   The notches are the ticket-stub cue, and they are a mask rather
+   than two positioned circles: a circle would have to be painted
+   in the page's background colour to read as a hole, and there is
+   no page background here — there is video. The mask cuts real
+   holes, so the footage shows through them.
+
+   radial-gradient stops are hard (same position twice) so the
+   bite has a clean edge instead of a 10px feathered smudge, and
+   the -1px inset on each keeps the cut biting INTO the border
+   rather than stopping a hair short of it and leaving a thread of
+   dashed line across the mouth of the notch. */
+.code__plate {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  border: 2px dashed var(--accent-400);
+  border-radius: var(--radius-lg);
+  background: var(--brand-50);
+  overflow: hidden;
+  -webkit-mask:
+    radial-gradient(circle 0.5rem at -1px 50%, transparent 100%, #000 100%),
+    radial-gradient(circle 0.5rem at calc(100% + 1px) 50%, transparent 100%, #000 100%);
+          mask:
+    radial-gradient(circle 0.5rem at -1px 50%, transparent 100%, #000 100%),
+    radial-gradient(circle 0.5rem at calc(100% + 1px) 50%, transparent 100%, #000 100%);
+  -webkit-mask-composite: source-in;
+          mask-composite: intersect;
+}
+
+/* user-select: all so one click takes the whole code and never
+   half of it. It is the fallback path, not the main one — the
+   button beside it is — but it is the path a visitor with no
+   JavaScript gets, so the value is real selectable text and not
+   a background image or a ::before.
+
+   brand-950 on brand-50 is the full width of one ramp, which is
+   where the plate gets its authority: measured, the code lands at
+   16.4:1. The tracking is the coupon tell — a redemption code is
+   read one character at a time, not as a word, and 0.08em is what
+   stops WELCOM10 reading as a misspelling.
+
+   min-height is bumped a step over --field-h. The plate is the
+   payload of the page and a field-height box makes it look like
+   one input among several, which is the thing this rewrite is
+   getting away from. */
+.code__value {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(var(--field-h) + var(--space-3));
+  padding: var(--space-3) var(--space-4);
+  color: var(--brand-950);
+  letter-spacing: 0.08em;
+  -webkit-user-select: all;
+          user-select: all;
+}
+
+/* The button is the one saturated thing on the plate, which is
+   what makes the coupon read as actionable rather than as a
+   printed slip. accent-700 rather than the raw accent: the base
+   hex puts white at 2.9:1 and fails, and 700 carries it to 5.6:1
+   while staying recognisably the page's gold.
+
+   The divider is a dashed rule in the same accent as the outer
+   edge — the tear line a real coupon has, and the reason the
+   button reads as the detachable half rather than as a chip
+   dropped onto the plate. */
+.code__copy {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-left: 2px dashed var(--accent-400);
+  /* padding-box, and it is the whole reason the tear line reads as
+     one. A background paints under its own border by default, so
+     the gaps between the dashes filled with the button's gold and
+     the perforation flattened into a faint solid rule. Clipped to
+     the padding box the gold stops at the border's inner edge and
+     the gaps show the plate's brand-50 through — an actual row of
+     holes. */
+  background: var(--accent-700);
+  background-clip: padding-box;
+  color: var(--color-overlay-text);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color var(--dur-ui) ease,
+              transform var(--dur-press) var(--ease-out);
+}
+.code__copy:active { transform: scale(0.96); }
+
+/* The button ships hidden and script.js reveals it — see the note
+   over the driver. This rule is why that works: an author
+   declaration of display beats the [hidden] rule in the UA sheet
+   whatever its specificity, so .code__copy's own display: flex
+   would quietly un-hide it. Same shape as the .rail-nav[hidden]
+   rule further up, and for the same reason. */
+.code__copy[hidden] { display: none; }
+
+/* One step darker, not a translucent wash: the button has its own
+   ground now, and --color-overlay-fill over accent-700 barely
+   moves it. */
+@media (hover: hover) and (pointer: fine) {
+  .code__copy:hover { background: var(--accent-800); }
+}
+
+/* The confirmation. role="status" in the markup makes it a polite
+   live region, so the same string that appears here is announced;
+   a button that quietly relabels itself confirms the copy to a
+   sighted visitor and to nobody else.
+
+   min-height, not a margin that appears with the text: the line
+   holds its own room from first paint so confirming a copy never
+   shoves the two notes below it down the page. */
+.code__status {
+  min-height: 1.5rem;
+  margin-top: var(--space-2);
+  color: var(--color-overlay-text);
+  text-shadow: 0 1px 2px rgba(9, 11, 14, 0.55);
+}
+
+/* The scrim, re-shaped for centred copy. Two classes deep on
+   purpose — see the note at the top of this block. A radial puts
+   the weight under the copy and lets the corners of the frame
+   stay bright, which is what stops the whole thing reading as a
+   dark slab with a photograph somewhere behind it. The linear
+   underneath is the bottom weighting the seam needs to land on.
+
+   The stops are the hero's own tokens, not new ones: 0.40 over
+   the copy, composited with the 0.34 band below to an effective
+   0.60 — the same figure the phone hero on index.html carries,
+   where the title measures 3.51:1 at the glyph against a 3:1 bar
+   for large text. */
+.hero-offer--welcome .hero-offer__scrim {
+  background:
+    /* 1 · THE COPY WEIGHT. A radial puts it under the copy and
+       lets the corners of the frame stay bright, which is what
+       stops the whole thing reading as a dark slab with a
+       photograph somewhere behind it. */
+    radial-gradient(78% 62% at 50% 46%,
+      var(--hero-scrim-1)  0%,
+      var(--hero-scrim-1) 34%,
+      var(--hero-scrim-2) 68%,
+      var(--hero-scrim-0) 92%),
+    /* 2 · THE BAND, and it is HERE rather than on .welcome — which
+       is where the marketing hero puts its copy scrim — for one
+       reason: that element is capped at --container-max, so on a
+       viewport wider than 1200px a gradient on it ends in two
+       hard vertical edges down the photograph. The marketing hero
+       never shows them because it switches this band off at the
+       same breakpoint the frame goes wide. This page has no
+       diagonal to hand the job to, so the band has to stay on at
+       every width — and a full bleed layer is the only place it
+       can stay on from. */
+    linear-gradient(to top,
+      var(--hero-scrim-0)        0%,
+      var(--hero-scrim-copy-1)  14%,
+      var(--hero-scrim-copy-1)  82%,
+      var(--hero-scrim-copy-2)  94%,
+      var(--hero-scrim-0)      100%),
+    /* 3 · THE TOP. The marketing hero has no third layer because it
+       has nothing at the top of its frame — the copy sits low and
+       the picture is allowed to be a picture up there. This page
+       puts the back link in the top left corner, over whatever the
+       footage happens to be doing, and measured over the clip that
+       corner runs to rgb(175,166,161): the label came in at
+       2.31:1 against a 4.5:1 bar. The plateau runs to 16% so it
+       clears the link's own 44px target box at every viewport,
+       then it is gone by 46% — well above the greeting, so it
+       reads as a top vignette and not as a second slab. */
+    linear-gradient(to bottom,
+      var(--hero-scrim-1)  0%,
+      var(--hero-scrim-1) 16%,
+      var(--hero-scrim-2) 30%,
+      var(--hero-scrim-0) 46%),
+    /* 4 · the bottom weighting the seam lands on. Deeper than the
+       marketing hero's, and for the same reason as layer 3: the
+       two reassurance lines sit down here, and on a phone they are
+       body and caption sized — a 4.5:1 bar, not the 3:1 the
+       headline above them gets to use. */
+    linear-gradient(to top,
+      var(--hero-scrim-1)  0%,
+      var(--hero-scrim-2) 30%,
+      var(--hero-scrim-0) 52%);
+}
+
+/* And the inner carries no band of its own at any width — see
+   layer 2 above. Two classes, so it also beats the mobile
+   .hero-offer__inner rule that paints one. */
+.hero-offer__inner.welcome { background: none; }
+
+/* The entrance, extending the hero's four-element stagger to the
+   two elements this page adds. Same curve, same duration, same
+   70ms step, so the two pages open the same way. */
+@media (prefers-reduced-motion: no-preference) {
+  .welcome .back-link,
+  .welcome .welcome__lead,
+  .welcome .code,
+  .welcome .welcome__note {
+    animation: hero-rise var(--dur-reveal) var(--ease-out) both;
+  }
+  /* The logo and the title are already in the hero's own stagger
+     at 40ms and 110ms — .welcome__title carries .hero-offer__title.
+     These four continue the same 70ms step from there.
+
+     THE ORDER HERE IS DOCUMENT ORDER, and it has to stay that
+     way. The lead used to run at 180ms because it used to sit
+     above the plate; now that it signs off at the foot it takes
+     the last slot, or the page opens with its bottom line
+     arriving before the coupon it is talking about. */
+  .welcome .back-link           { animation-delay:   0ms; }
+  .welcome .code                { animation-delay: 180ms; }
+  .welcome .welcome__note       { animation-delay: 250ms; }
+  .welcome .welcome__note--fine { animation-delay: 320ms; }
+  .welcome .welcome__lead       { animation-delay: 390ms; }
+}
+
+/* ============================================================
+   DESKTOP — everything above is the phone layout
+   Type steps itself at 767px inside _template.css. This
+   breakpoint is layout only.
+   ============================================================ */
+@media (min-width: 1024px) {
+  /* ---- 1 + 2 · hero offer ---- */
+  .hero-offer        { min-height: var(--hero-min-lg); }
+  .hero-offer__inner { padding: var(--space-16) var(--space-9); }
+  .hero-offer__seam  { height: var(--hero-seam-lg); }
+  .hero-offer__logo  { margin-bottom: var(--space-7); }
+  .hero-offer__logo img {
+    height: var(--hero-logo-lg);
+    max-width: min(var(--hero-logo-max-lg), 100%);
+  }
+  .hero-offer__title,
+  .hero-offer__offer { max-width: 38rem; }
+
+  /* The diagonal below takes over from the copy scrim. */
+  .hero-offer__inner { background: none; }
+
+  /* A diagonal vignette rather than a bottom weighted one: the copy
+     lives in the left third, so the right of the photograph stays
+     bright and the frame still reads as a photograph. */
+  .hero-offer__scrim {
+    background:
+      linear-gradient(100deg,
+        var(--hero-scrim-1)  0%, var(--hero-scrim-1) 14%,
+        var(--hero-scrim-2) 34%, var(--hero-scrim-0) 58%),
+      linear-gradient(to top, var(--hero-scrim-2) 0%, var(--hero-scrim-0) 28%);
+  }
+
+  .offer-form--hero { margin-top: var(--space-6); max-width: 36rem; }
+  .offer-form--hero .offer-form__field,
+  .offer-form--hero .offer-form__control .btn {
+    min-height: calc(var(--field-h-lg) - var(--space-2));
+  }
+
+  /* ---- 9 · closing offer ----
+     Both children come out of flow, so the plate's height is this
+     number and nothing else. */
+  .claim { min-height: 38rem; }
+
+  /* The whole plate, not three quarters of it. The photograph runs
+     edge to edge and the card floats on it — so the picture
+     continues past the card to the plate's right corner instead of
+     dissolving into a gradient behind it. No mask: there is no
+     seam to hide once the photo has no edge inside the plate. The
+     plate's own gradient is still under all of this and still
+     earns its place, as the ground the video sits on until a frame
+     lands. */
+  .claim__media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    aspect-ratio: auto;
+    max-height: none;
+  }
+
+
+  /* Pinned to the right and centred, which puts roughly a third
+     of it on the photograph at 1024 and still a quarter of it on
+     a 1600px monitor: the plate grows, the card does not, and the
+     photo's 72% edge moves right with the plate. So the overlap
+     holds at every width without a second breakpoint.
+
+     min() rather than a flat width — at exactly 1024 a fixed
+     27rem card leaves 88px of plate showing to its right, and the
+     percentage is what keeps that from happening. */
+  .claim__card {
+    position: absolute;
+    top: 50%;
+    right: var(--space-7);
+    translate: 0 -50%;
+    width: min(30rem, 46%);
+    margin: 0;
+    padding: var(--space-6);
+    /* One radius all round again — off the plate's edges, the card
+       is a free floating object and the corner pairing the base
+       rule needs does not apply. */
+    border-radius: var(--claim-radius);
+  }
+
+  /* Back to stacked, and this is the one place the form reverses
+     a rule it picked up at a smaller width. Everywhere else the
+     control gets wider as the page does; here it gets narrower,
+     because the card is a fixed 480px rail whatever the monitor
+     is. Inline, the field had 210px left after the button and the
+     first client to write a longer label than "CLAIM 10% OFF"
+     would have pushed it out of the card. Stacked, the button is
+     the full width of the card, which is also the stronger call
+     to action of the two. */
+  .offer-form--claim .offer-form__control { flex-direction: column; align-items: stretch; }
+
+  .offer-form--claim .offer-form__field,
+  .offer-form--claim .offer-form__control .btn {
+    min-height: calc(var(--field-h-lg) - var(--space-2));
+  }
+
+  /* Cards wrap into rows instead of swiping */
+  .slider__track {
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow-x: visible;
+    column-gap: var(--space-4);
+    row-gap: var(--space-6);
+  }
+
+  /* ---- 3 · featured stays ---- */
+  /* The arrows appear and the intro stops spanning the full
+     container, so the subhead cannot run under them. Baseline
+     aligned to the bottom of the intro block, which puts them
+     level with the subhead rather than floating beside the
+     headline. */
+  .rail-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-6);
+  }
+  .rail-head .subhead { margin-bottom: var(--space-0); }
+  .rail-nav {
+    display: flex;
+    flex: 0 0 auto;
+    gap: var(--space-2);
+  }
+  .slider--rail { margin-top: var(--space-5); }
+
+  /* ---- the rail itself ----
+     Every other slider wraps into rows up here. This one does
+     not, and the exception is deliberate: five 373px cards
+     wrapped to a second row, and the only way to fit five in one
+     row inside 1200px is ~220px each, which is too narrow for a
+     24px serif property name. A rail keeps the card comfortable,
+     and it is the only version that still works when a client
+     has three properties or twelve.
+
+     The track lives outside .container so it can bleed edge to
+     edge as a swipe strip on a phone. That is what was throwing
+     the alignment off up here: the heading sat in a 1200px
+     centred container and the cards did not, so the first card
+     started ~120px left of the section title. Repeating
+     .container's own three properties — same max width, same
+     auto margins, same gutter — puts card one on exactly the
+     heading's left edge, and the rail scrolls inside that box
+     rather than off the side of the screen. */
+  .slider--rail .slider__track {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    /* Not inherited from the rule above. Centring a flex row that
+       is wider than its scroll container splits the overflow
+       across both sides, and the half that lands left of the
+       scroll origin cannot be reached — card one sat 184px off
+       the left edge with scrollLeft already at 0. */
+    justify-content: flex-start;
+    padding-block: var(--space-0) var(--space-4);
+    column-gap: var(--space-4);
+
+    /* Left edge on the container's, right edge off the screen.
+       Boxing the rail inside 1200px instead put the clip 120px
+       shy of the viewport, so the cut card ended mid plate with
+       dead page beside it and read as a rendering fault rather
+       than as more content. Running it off the edge is the thing
+       that actually says "this continues".
+
+       100% is .slider--rail's width, not the viewport's, so
+       unlike 100vw it does not count the scrollbar and the left
+       edge cannot drift off the heading's by a few pixels. The
+       max() is the narrow case, where the expression goes
+       negative and the plain gutter is what is wanted. */
+    padding-inline-start: max(
+      var(--container-x),
+      calc((100% - var(--container-max)) / 2 + var(--container-x))
+    );
+    padding-inline-end: var(--container-x);
+
+    /* Snap to the padding edge, not the border edge, so a snapped
+       card lands on the heading's left edge rather than tight
+       against the side of the screen. */
+    scroll-padding-inline-start: max(
+      var(--container-x),
+      calc((100% - var(--container-max)) / 2 + var(--container-x))
+    );
+  }
+
+  /* Amenity and favourite cards stretch to fill one even row.
+     Reviews are deliberately not in this list any more — the rail
+     scrolls itself now, so its cards keep a fixed width at every
+     size instead of dividing a row. */
+  .slider--even .slider__track > * { flex: 1 1 0; min-width: 0; }
+
+  /* 384px, and the reason the rail needs five cards rather than
+     three: five at this width overrun the 1200px panel, so the
+     seam between the two halves of the loop is always off screen.
+     Three would leave a hole in it on a wide monitor. */
+  .review { width: 24rem; padding: var(--space-5); }
+
+  .review-rail { margin-top: var(--space-6); }
+
+  /* Twice as wide once the rail is 1104px instead of 343px — the
+     same proportion of it, not a bigger fade. */
+  .review-rail::after { width: var(--space-9); }   /* 64px */
+
+  /* Two up becomes four — flex: 1 1 0 above already did that by
+     dropping the 50% basis — and the ratio gives way to a fixed
+     height, because the accordion further down changes a card's
+     WIDTH. A card still holding a ratio would grow taller as it
+     widened and shove the rest of the page down; height held
+     constant, the expansion is width only and object-fit: cover
+     just shows more of the same photo. */
+  .slider--even .tall-card {
+    aspect-ratio: auto;
+    height: 26rem;                        /* 416px */
+  }
+
+  /* More air under the intro once the pair below it runs side by
+     side and reads as one wide block. */
+  .location-intro { margin-bottom: var(--space-9); }
+
+  /* A third and two thirds, the reference's 4-and-8 of twelve.
+     minmax(0, …) rather than a bare fraction: without it a long
+     unbroken string in the card — an address, a URL — sets the
+     column's floor and pushes the map out of the container. */
+  .location-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: var(--space-5);
+  }
+
+  /* The map is first in the source, because on a phone it belongs
+     directly under the heading. Here the two are placed by hand
+     into one row so the detail column takes the left side back —
+     explicit placement rather than `order`, which would leave the
+     grid's auto-flow deciding what happens when a third child
+     turns up. Both are on row 1, so the row is as tall as the
+     detail column and the map stretches to match it. */
+  .location-detail { grid-column: 1; grid-row: 1; }
+  .location-map    { grid-column: 2; grid-row: 1; }
+
+  /* The card fills the row, so the two columns end on the same
+     line instead of the card stopping short of the map. The row's
+     height comes from the map, and .location-detail is a flex
+     column, so the card only needs to be told to grow.
+
+     justify-content: center rather than pushing the button to the
+     bottom with margin-top: auto — the internal spacing is set
+     deliberately (24px under the drive times), and dropping the
+     button to the floor would stretch that one gap by whatever
+     the map happens to be taller by. Centring absorbs the extra
+     in the padding instead and leaves every gap as authored. */
+  .address-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+
+  .panel { padding: var(--space-6) var(--space-5); }
+  .stats { max-width: 45rem; margin-inline: auto; gap: var(--space-6); }
+  .stats__badge img { max-width: 8.5rem; }
+
+}
+
+/* ============================================================
+   5 · AMENITIES, THE PINNED LAYOUT
+   ------------------------------------------------------------
+   Its own media query, and the height half of it is a hard
+   requirement rather than a nicety.
+
+   The frame is exactly one screen and it is PINNED, so anything
+   that does not fit inside it is not merely tight — it is off the
+   bottom of the window with no scroll available to reach it,
+   because scrolling moves the highlight and not the page. The
+   list has to fit, and whether it fits is a question about the
+   window's HEIGHT, which a min-width query cannot see: the case
+   that broke was a wide short window, 1280x700 and 1100x620, an
+   ordinary laptop once the browser chrome comes off a 768px
+   screen. The fourth amenity was cut off and unreachable.
+
+   680px is measured, not guessed. The left column overflows the
+   frame at about 633px of window and clears it by 35px at 680.
+   The threshold is the measured break plus a margin, and the
+   margin is sized against the one input this file does not
+   control: if the webfonts fail and a fallback with a taller line
+   box is substituted, the four-line intro and the four titles
+   grow by roughly 26px between them. 35px covers that. Browser
+   text zoom needs no allowance — zoom shrinks the reported
+   viewport height along with everything else, so a zoomed window
+   falls below this gate on its own and takes the fallback.
+
+   THIS NUMBER HAS MOVED THREE TIMES AND EVERY MOVE WAS A
+   MEASUREMENT, which is the point of this note:
+
+     640px  numeral at 48px on a vh clamp; break 601
+     600px  numeral flat 16px; break 532
+     680px  the Check Availability button added ~100px; break 670,
+            then 633 once the intro was let off its 46ch cap
+
+   The button was added AFTER the gate had been lowered to 600 and
+   the gate was not re-measured — which left a 70px band of window
+   heights where the pinned layout was on and the button was off
+   the bottom of the screen with no way to scroll to it. RE-MEASURE
+   AFTER ANY CHANGE TO THE LEFT COLUMN'S CONTENT. Adding a line of
+   copy to the intro is enough to invalidate this.
+
+   UNDER 640px the section falls back to the layout the phone
+   uses: one column, no pin, and a photograph above each amenity's
+   name. That is not a degraded version of this one, it is the
+   other one this section already ships, and it cannot clip
+   anything because nothing is pinned.
+
+   script.js gates its scroll-progress driver on this exact query.
+   IF THIS CHANGES, CHANGE IT THERE TOO — they have to agree, or
+   one layout ends up with the other's driver and the highlight
+   stops matching the deck. */
+@media (min-width: 1024px) and (min-height: 680px) {
+  /* ---- 5 · amenities, the pinned two column version ----
+     The section is a SCROLL TRACK now, not a block of content. It
+     is several screens tall and the grid inside it pins for the
+     whole way down, so what you see is one still frame: the whole
+     list of amenities on the left, the deck of photographs on the
+     right, and scrolling moves which amenity is lit rather than
+     moving the page.
+
+     WHY THIS RATHER THAN THE 60vh-PER-STEP VERSION IT REPLACES.
+     That version gave each amenity two thirds of a screen and let
+     them scroll past a pinned photo, which reads perfectly well
+     but shows you exactly one amenity at a time: on a 900px
+     monitor, standing on 01, the other three are below the fold.
+     The list could not do the one job a numbered list is for,
+     which is to say how many there are and where in them you are.
+     Pinned, all four are on screen, the lit one is the answer to
+     "where am I", and the deck beside it says the same thing a
+     second way — three cards left to go.
+
+     The cost is honest and worth naming: the page gets four
+     screens longer, and for four amenities that is the trade. It
+     would not be at ten. */
+
+  /* One screen to arrive in, then one dwell per amenity. The last
+     dwell is what stops the section releasing the moment 04 lights
+     up — without it the fourth amenity would flash and be gone.
+
+     --process-count HAS TO MATCH the number of <li>s, and it is
+     the one number in this section that cannot be derived in CSS.
+     script.js overwrites it from the real count on load, so a
+     mismatch only costs the pre-JS paint — but it is still worth
+     keeping right, because a no-JS visitor gets what is written
+     here and nothing else. */
+  .section--process {
+    --process-count: 4;
+    --process-dwell: 70vh;
+    min-height: calc(100vh + var(--process-count) * var(--process-dwell));
+    padding-block: 0;                     /* the pinned frame carries its own */
+  }
+
+  /* The copy scrim, angled. Up here every word is in the left
+     column and the right half of the section is under the deck,
+     which is a photograph in its own card and needs no help — so
+     the scrim is spent where the text is and released where it is
+     not, and the wash keeps most of its colour around the deck
+     where it still reads as one.
+
+     THE STOPS ARE ANCHORED TO THE COLUMN, NOT TO THE VIEWPORT,
+     and that is the difference between this working and nearly
+     working. Written as plain percentages the ramp is a fraction
+     of the SCREEN, but the copy's position is set by a centred
+     1200px container — so as the window widens the container's
+     left edge moves right and the copy slides down the ramp into
+     the falloff. Measured: at 1440 an inactive title sat at
+     3.68:1 and the same title at 1920 sat at 3.00:1, on identical
+     CSS, purely because the window was wider.
+
+     50% is the one figure that does hold, because the container
+     is centred and so its midline is the viewport's at every
+     width. The left column runs from the container's left edge to
+     half a column-gap short of that midline, so holding full
+     strength to `50% - space-8` covers the whole column with a
+     little to spare, whatever the window is doing.
+
+     THE FALLOFF THEN RUNS ALL THE WAY TO THE RIGHT EDGE, and the
+     length of it is the point. An earlier version was out by
+     `50% + space-7`, which is a 112px ramp on a 1440px window —
+     short enough that the eye reads it as the edge of a dark
+     panel rather than as a vignette, and there was a visible seam
+     down the middle of the section. Spread across the whole right
+     half it is a gradient nobody notices, which is what a scrim
+     doing structural work should be. It costs nothing to spend
+     the extra distance there: everything past the midline is
+     either the deck, which is opaque, or ground.
+
+     0.07 rather than 0 at the far edge, so the ramp does not
+     arrive at exactly the unscrimmed wash on the last pixel. */
+  .section--process {
+    --copy-scrim: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.60) 0,
+      rgba(0, 0, 0, 0.58) calc(50% - var(--space-8)),
+      rgba(0, 0, 0, 0.07) 100%
+    );
+  }
+
+  /* The frame that pins. sticky rather than fixed, so it releases
+     itself at both ends of the track instead of needing anything
+     to tell it when the section is over.
+
+     height, not min-height. The deck below sizes its cards off a
+     percentage of this box, and a percentage of min-height is
+     indefinite — the cards would collapse to their content, which
+     for an absolutely positioned <img> is nothing.
+
+     The padding is on the frame and not on the section, because
+     the section's own padding is now spread over four screens of
+     track where it does nothing, and what actually needs a margin
+     is the pinned screen. clamp against vh rather than a flat
+     --space-7: at 1024x768, the shortest window this layout runs
+     at, 96px of padding plus the intro plus four amenities does
+     not fit, and the padding is the part that can give. */
+  .process {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    box-sizing: border-box;
+
+    /* Hoisted into a property because the deck's height cap has to
+       subtract it, and custom properties inherit — so .process__media
+       can read the same value rather than repeating the clamp and
+       drifting from it. */
+    --process-pad: clamp(var(--space-4), 5vh, var(--space-7));
+    padding-block: var(--process-pad);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+    /* ONE ROW, TWO COLUMNS. It was two rows with the deck spanning
+       both, and that is the arrangement this replaces: a
+       row-spanning item distributes its height across the auto
+       rows it crosses, so the 810px deck inflated the intro's row
+       to 346px for 228px of content and opened a 118px hole under
+       the heading that nothing had asked for. Measured, not
+       guessed — grid-template-rows computed to
+       "345.797px 428.203px".
+
+       With the left column wrapped into a single item there is
+       nothing to span and nothing to inflate. The row is as tall
+       as the deck, the left column is as tall as its own content,
+       and align-items decides where in the row it sits.
+
+       align-items: center rather than start. The two columns used
+       to share a top edge, which was the right call when the list
+       was 48px numerals and nearly as tall as the deck; at 16px
+       the left column is 478px against the deck's 810px, and
+       top-aligned that leaves 330px of dead ground under the last
+       amenity. Centred, the same space splits above and below and
+       reads as margin. */
+    align-items: center;
+    column-gap: var(--space-8);
+  }
+
+  /* The left column's own rhythm, and now the ONLY thing between
+     the intro and the list. */
+  .process__col {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(var(--space-5), 5vh, var(--space-8));
+    grid-column: 1;
+    min-width: 0;                         /* so long words cannot widen the column */
+  }
+
+  /* display: block undoes the display: contents the phone layout
+     needs. Dissolved, the intro is not a box at all and its three
+     children become siblings of the list — which is the phone
+     layout and wrong in here, where the intro has to be one flex
+     item of the column above. */
+  .process__aside { display: block; }
+
+  /* The subhead's own bottom margin is double spacing in here: the
+     column's flex gap already separates the intro from the list, so
+     the two stack and the space comes out 32px wider than it reads
+     as. Worth naming rather than just deleting, because it is not
+     cosmetic — that 32px is 32px the list does not have inside a
+     frame it is not allowed to overflow, and it is the single
+     cheapest thing in this column. */
+  .process__aside > :last-child { margin-bottom: 0; }
+
+  /* THE INTRO USES THE WHOLE COLUMN, and this is a height fix that
+     happens to also be better typography.
+
+     .subhead carries max-width: 46ch globally, which is a sensible
+     measure for a paragraph that can run the width of a section.
+     In here the column is already only ~536px, so the 46ch cap
+     binds at about 414px and wraps the intro to five lines inside
+     a box with 120px of unused width beside it. Off the cap it
+     wraps to four — the column itself is the measure, and at
+     ~60ch that is still comfortably inside the range a line of
+     body copy should be.
+
+     The 28px this saves is not decoration either. The pinned frame
+     cannot be scrolled, so the column has to fit inside one screen
+     or the last thing in it is unreachable; a whole line of the
+     intro is a quarter of the margin the height gate is built on.
+     See the gate's note for the measured numbers. */
+  .process__aside .subhead { max-width: none; }
+
+  /* Column 2 by hand rather than left to auto-flow, for the same
+     reason .location-grid above places its two children by hand:
+     auto-placement starts guessing the day a third child turns up
+     in here. No grid-row any more — there is one row now, and the
+     note on .process explains why spanning two was the problem. */
+  .process__media { grid-column: 2; }
+
+  /* The deck is CAPPED, not stretched, and the cap is the front
+     card's height rather than the stage's.
+
+     It used to be height: 100%, which filled whatever the pinned
+     frame had — fine at 900px of window, wrong above it: at 1080
+     the card came out 936px against a 784px source, so the crop
+     opened up top and bottom and the deck read as a column rather
+     than as a card. 786px is the source's own height, so at that
+     size and above the photograph is shown uncropped and the deck
+     keeps a card's proportions on any monitor.
+
+     min(), so short windows are unaffected — there the frame is
+     the smaller of the two and the cap never engages. The peek is
+     added back on top for the same reason as before: it is room
+     for the cards behind, not part of the front one.
+
+     No aspect-ratio, still: the height is stated here and asking
+     for a ratio as well would drive the WIDTH off it and take the
+     deck out of its column. Width is the grid's business.
+
+     A definite height also means the stage no longer stretches to
+     its grid area, so it sits at the top of it — which puts the
+     deck's top edge on the eyebrow's, the one alignment the two
+     columns share. */
+  .process__media {
+    display: block;
+    position: relative;
+    aspect-ratio: auto;
+    /* 100vh MINUS THE FRAME'S OWN PADDING, not 100%, and that is a
+       circularity fix rather than a preference. The rows above are
+       content-sized now so that align-content can centre them, and
+       the media spans both of them — so a percentage height here
+       resolves against a row whose size this element is itself
+       helping to determine. The browser treats that as indefinite
+       and falls back to sizing the deck off the LEFT column, which
+       collapsed the card from 786px to 621px at 1440x900.
+
+       Viewport units have no such loop: the frame is exactly one
+       screen and its padding is known, so the space available to
+       the deck is arithmetic. */
+    --process-card-h: min(
+      786px,
+      calc(100vh - 2 * var(--process-pad) - var(--stack-peek))
+    );
+    height: calc(var(--process-card-h) + var(--stack-peek));
+    margin: 0;
+    max-width: none;
+  }
+
+  /* The pinned deck is back, so the per-step copies would be the
+     same four photographs a second time, down the other column. */
+  .process__step-photo { display: none; }
+
+  /* THE LIST, COMPACT. This is what the pin bought: the steps stop
+     being 60vh scroll boxes and go back to being list items, so
+     all four fit on one screen with the deck beside them.
+
+     A grid with a gap rather than padding on each step, so the
+     space between two amenities is one number in one place — and
+     so it can shrink on a short window without also shrinking the
+     space above the first one, which is the row gap's job.
+
+     align-self: start packs the list under the intro rather than
+     stretching it down the column: at four items the leftover
+     space belongs below the list, not spread through it. */
+  .process__steps {
+    display: grid;
+    gap: clamp(var(--space-2), 3.2vh, var(--space-6));
+  }
+
+  .process__step {
+    padding-block: 0;
+    min-height: 0;
+  }
+
+  /* The CTA, pinned version: back to hugging its own text and
+     sitting on the list's left edge.
+
+     align-self, not text-align. The column is a flex container up
+     here, so a stretched item is the default and the button would
+     run the full width of the column — 536px of brand fill next
+     to a 16px numeral. align-self: flex-start plus width: auto is
+     what takes it back to its content width; text-align would
+     only move the label inside a box still 536px wide.
+
+     And NOT display: inline-block, which was the first thing
+     written here and does nothing: a flex container blockifies
+     its items, so the declaration is discarded and the computed
+     value comes back "block" either way. The width and the
+     alignment are the whole mechanism.
+
+     The margin-top goes because the column's own gap now owns
+     that space, and the two would otherwise stack. */
+  .process__cta {
+    width: auto;
+    max-width: none;
+    align-self: flex-start;
+    margin-top: 0;
+  }
+
+
+  /* Reduced motion turns the deck back into a crossfade, so the two
+     cards that were peeking out at the bottom are not there any
+     more and the strip they needed would be bare stage under the
+     photograph. Zeroed, the front card fills the frame. */
+  @media (prefers-reduced-motion: reduce) {
+    .process__media { --stack-peek: 0px; }
+  }
+
+  /* The steps are not scroll boxes any more, so there is nothing
+     for a snap point to snap to — the page scrolls past a pinned
+     frame and every position in the track is a legitimate place to
+     stop. The document-level scroll-snap-type this section used to
+     set has gone with them, which also gives the nav anchors their
+     ordinary behaviour back on the way past. */
+}
+
+/* ============================================================
+   SCROLL REVEAL  —  a section arrives as you reach it
+   ------------------------------------------------------------
+   Everything below the hero starts a little low and a little
+   transparent and settles as it comes into view. Once. Scrolling
+   back up does not replay it: a page that re-animates on every
+   pass stops being a page and starts being a toy.
+
+   THE HIDDEN STATE IS GATED ON .reveal-on, and that gate is the
+   whole safety story. The class goes on <html> from the inline
+   script in <head>, and only ever where there is an
+   IntersectionObserver to take it off again and the visitor has
+   not asked for less motion. So the page with no JavaScript, the
+   page whose JavaScript failed, and the page whose visitor wants
+   it still are all the same page: everything visible, nothing
+   waiting on an event that is never coming. Never write the
+   hidden state into a plain selector.
+
+   TWO SHAPES IN THE MARKUP:
+
+     [data-reveal]         one element, on its own.
+     [data-reveal-group]   a parent whose direct children come in
+                           one after another. Nothing goes on the
+                           children — the selectors below reach
+                           them — so adding a sixth stay card is
+                           still just adding a sixth stay card.
+
+   THREE WAYS IN, and which one an element gets is not taste, it
+   is what that element can safely be transformed by:
+
+     (default)   RISE     translateY + fade. Ordinary blocks.
+     "settle"    SETTLE   scale 0.98 -> 1 + fade. Cards inside a
+                          rail. A downward translate inside a
+                          scroll container adds real scrollable
+                          height to it; a scale down cannot.
+     "fade"      FADE     opacity alone. Anything already moving
+                          (the review rail) or pinned with
+                          position: sticky, where a transform is a
+                          containing block waiting to happen.
+
+   Written on the group as data-reveal-group="settle" to set the
+   default for its children, or on one element as
+   data-reveal="fade" for that element alone. A child's own
+   attribute wins, which is what the ordering of the two variant
+   blocks below is for — do not reorder them.
+   ============================================================ */
+:root {
+  --reveal-lift:    var(--space-3);   /* 16px. The hero rises 8px, but a
+                                         whole section is a bigger object
+                                         and reads as stuck at that
+                                         distance. */
+  --reveal-stagger: 70ms;             /* the hero's interval, kept, so the
+                                         page has one rhythm and not two */
+}
+
+/* --dur-reveal, not --dur-ui: this is a first-time entrance, the
+   category the 300ms ceiling for UI does not apply to. And the
+   same two properties the rest of the page animates — transform
+   and opacity are the two a compositor can do without going back
+   through layout. */
+.reveal-on [data-reveal],
+.reveal-on [data-reveal-group] > * {
+  opacity: 0;
+  transform: translate3d(0, var(--reveal-lift), 0);
+  transition: opacity   var(--dur-reveal) var(--ease-out),
+              transform var(--dur-reveal) var(--ease-out);
+  transition-delay: calc(var(--reveal-i, 0) * var(--reveal-stagger));
+}
+
+/* The ladder, in CSS rather than counted out in the script,
+   because a child that is handed its delay after first paint has
+   already been painted without one. It stops climbing at the
+   seventh child: past there the delay holds, so a client shipping
+   twelve stays does not leave the last one waiting most of a
+   second — long after the eye has moved on and the run has
+   stopped reading as one movement. */
+.reveal-on [data-reveal-group] > *:nth-child(2)    { --reveal-i: 1; }
+.reveal-on [data-reveal-group] > *:nth-child(3)    { --reveal-i: 2; }
+.reveal-on [data-reveal-group] > *:nth-child(4)    { --reveal-i: 3; }
+.reveal-on [data-reveal-group] > *:nth-child(5)    { --reveal-i: 4; }
+.reveal-on [data-reveal-group] > *:nth-child(6)    { --reveal-i: 5; }
+.reveal-on [data-reveal-group] > *:nth-child(n+7)  { --reveal-i: 6; }
+
+/* 0.98, not 0. Nothing in the world appears out of nothing, and a
+   card that grows from a point reads as a notification rather
+   than as a photograph that was always there. */
+.reveal-on [data-reveal-group="settle"] > * { transform: scale(0.98); }
+.reveal-on [data-reveal-group="fade"]   > * { transform: none; }
+
+/* Second, and deliberately: these weigh the same as the group
+   rules above, so it is source order that lets one child opt out
+   of what its group does. */
+.reveal-on [data-reveal="settle"] { transform: scale(0.98); }
+.reveal-on [data-reveal="fade"]   { transform: none; }
+
+.reveal-on [data-reveal].is-revealed,
+.reveal-on [data-reveal-group] > .is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* The gate is read once, at load. This is for the visitor who
+   turns the preference on mid-session — without it every block
+   still below them stays at opacity 0 for good, because
+   _template.css has just collapsed the transition that was going
+   to bring it back. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on [data-reveal],
+  .reveal-on [data-reveal-group] > * { opacity: 1; transform: none; }
+}
+
+/* ---- 5 & 6 · the accordion ----------------------------------------
+   The row shares its width out by flex-grow, so hovering one card
+   is the whole mechanism: it claims 2.6 shares against its
+   neighbours' 1 each, and because every card is flex: 1 1 0 the
+   others give the room up in the same tick. No JS, no widths to
+   keep in sync, and it stays correct whether the client ships
+   three amenities or six.
+
+   Inside the no-preference guard because a card resizing over
+   half a second is motion, whatever it is in aid of. With motion
+   reduced the cards hold their even row and hovering still brings
+   the panel up — the reveal never depended on the extra width. */
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine)
+   and (prefers-reduced-motion: no-preference) {
+  /* All three properties in one shorthand on purpose. This rule
+     and the scroll reveal's both weigh 0,2,0 and this one is
+     second, so a bare `transition: flex-grow` here would quietly
+     drop the reveal's fade on these four cards alone — the one
+     row on the page that failed to animate in, for no visible
+     reason. Keep the list complete. */
+  .slider--even .tall-card       { transition: flex-grow var(--dur-reveal) var(--ease-out),
+                                               opacity   var(--dur-reveal) var(--ease-out),
+                                               transform var(--dur-reveal) var(--ease-out); }
+  .slider--even .tall-card:hover { flex-grow: 2.6; }
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="HERO IMAGE 2 placeholder">
+  <rect x="1" y="1" width="1598" height="998" rx="0" fill="#d9d5cd" stroke="#a9a29a" stroke-width="2" stroke-dasharray="10 8"/>
+  <g font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" text-anchor="middle" fill="#6d675f">
+    <text x="800.0" y="498.0" font-size="71" font-weight="600" letter-spacing="1">HERO IMAGE 2</text>
+    <text x="800.0" y="577.0" font-size="65" fill="#8c857c">1600 x 1000</text>
+  </g>
+</svg>

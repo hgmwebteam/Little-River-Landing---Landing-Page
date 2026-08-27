@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<!-- The page runs the dark theme throughout: dark ground, light text, and
+     dark cards and form fields. Nothing opts back into the light theme.
+     data-theme nests in both directions, so putting data-theme="light" on a
+     card would turn it into a fully light surface on this dark page. -->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ============================================================
+     EDIT ME  ·  PAGE TITLE + SOCIAL SHARE
+     ============================================================ -->
+<title>Little River Landing | Link in Bio</title>
+<meta name="description" content="[One short sentence about the property or portfolio.]">
+<meta property="og:title" content="Little River Landing">
+<meta property="og:description" content="[One short sentence about the property or portfolio.]">
+<meta property="og:image" content="assets/img/og-image.svg">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/img/logo-mark.svg">
+
+<!-- ============================================================
+     FONTS
+     _template.css names the two families but does not load them.
+     If you change --font-display or --font-body over there, change
+     this URL to match or the page silently falls back to Georgia
+     and the system sans.
+     ============================================================ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spectral:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     DESIGN SYSTEM
+     Load order is load bearing:
+       _template.css     tokens, reset, type scale
+       styles.css        components, which consume and may override
+       brand-contrast.js reads the final --brand-base and corrects
+                         the ramp. Synchronous and in <head> on
+                         purpose — it has to run before first paint.
+                         Do not add defer or async.
+     ============================================================ -->
+<link rel="stylesheet" href="_template.css">
+<link rel="stylesheet" href="styles.css">
+<script src="brand-contrast.js"></script>
+
+<!-- ============================================================
+     SCROLL REVEAL GATE
+     Opens the door for the reveal in styles.css, and it has to
+     happen up here for the same reason brand-contrast.js does:
+     the hidden state must be in place before the browser paints,
+     or every section flashes in, disappears, and comes back.
+
+     The two tests are the whole of the accessibility and
+     no-JavaScript story. Fail either and the class is never
+     added, the [data-reveal] rules never match anything, and the
+     page is simply a page with everything on it. Do not move
+     this to CSS and do not add defer.
+     ============================================================ -->
+<script>
+  (function (html) {
+    if (!('IntersectionObserver' in window)) return;
+    if (window.matchMedia
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    html.classList.add('reveal-on');
+  })(document.documentElement);
+</script>
+</head>
+
+<body>
+
+<!-- ============================================================
+     1 + 2 · HERO OFFER  —  video banner, brand mark, email capture
+     The hero and the offer card are one section now. The video is
+     full bleed and the copy and form sit on top of it.
+
+     To swap the footage, replace the two files in assets/video/ and
+     re-cut the poster from the new first frame. Keep both formats:
+     the WebM is the smaller file and the MP4 is what Safari plays.
+     ============================================================ -->
+<header class="hero-offer">
+
+  <div class="hero-offer__media">
+    <!-- The four attributes are not optional between them: a browser will
+         only autoplay a video that is muted, and without playsinline iOS
+         takes it fullscreen the moment it starts. loop is what keeps the
+         12 seconds from ending on a frozen frame.
+
+         poster is the first frame of the same clip, so the framing is
+         already right at first paint and there is something to look at
+         while the file arrives — it is also the whole hero for a visitor
+         who asks for reduced motion, who script.js holds on it.
+
+         The video carries no meaning the copy does not already carry, so
+         it is hidden from assistive tech rather than described. -->
+    <video class="hero-offer__video"
+           poster="assets/video/hero-poster.webp"
+           autoplay muted loop playsinline preload="auto"
+           aria-hidden="true">
+      <source src="assets/video/hero.webm" type="video/webm">
+      <source src="assets/video/hero.mp4" type="video/mp4">
+    </video>
+    <!-- Both layers are doing real work. See the notes in styles.css
+         before touching either: the scrim is what makes the white copy
+         legible, and the seam is what removes the hard edge between
+         this section and the next. -->
+    <div class="hero-offer__scrim" aria-hidden="true"></div>
+    <div class="hero-offer__seam" aria-hidden="true"></div>
+  </div>
+
+  <div class="hero-offer__inner">
+
+    <!-- The logo is the only thing naming the brand now, so the alt text
+         has to carry the name — it is what a screen reader reads out and
+         what shows if the file fails to load. -->
+    <a class="hero-offer__logo" href="[BRAND WEBSITE URL]" target="_blank" rel="noopener">
+      <img src="assets/img/logo-mark.svg" alt="Little River Landing">
+    </a>
+
+    <!-- The one liner leads now, so it is the h1 — the page's primary
+         heading should be the thing that reads as primary.
+
+         KEEP IT SHORT. Measured in this column at this size, about 19
+         characters or three words is the ceiling for two lines, and a
+         headline running to three lines stops reading as a headline.
+         The column is not widened to fit more on purpose: past roughly
+         38rem the copy crosses into the part of the photo the scrim has
+         already let go, and the contrast starts dropping. -->
+    <h1 class="hero-offer__title type-hero">Everything a lake trip should be.</h1>
+
+    <!-- The offer sits second. Emphasis on the amount is weight and
+         light, not a size jump or a second typeface. -->
+    <p class="hero-offer__offer type-section-title">
+      Sign up and receive <span class="hero-offer__amount fw-bold">10% OFF</span>
+    </p>
+
+    <!-- Point action= at your form handler (GoHighLevel form URL, etc.) -->
+    <form class="offer-form offer-form--hero" action="[FORM ACTION URL]" method="post">
+      <!-- Hidden from view, not from a screen reader. The input needs an
+           accessible name and a placeholder is not one — it is a hint, and
+           assistive tech is not required to announce it. -->
+      <label class="offer-form__label" for="hero-email">Email address</label>
+
+      <div class="offer-form__control">
+        <div class="offer-form__field">
+          <span class="offer-form__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3 6 9 6 9-6"/></svg>
+          </span>
+          <input class="offer-form__input type-body" id="hero-email" type="email" name="email" placeholder="Enter your email" required autocomplete="email">
+        </div>
+        <button class="btn btn--primary type-button-caps" type="submit">CLAIM 10% OFF</button>
+      </div>
+    </form>
+
+  </div>
+</header>
+
+<!-- ============================================================
+     5 · AMENITIES  —  a pinned list beside a deck of photographs
+
+     DESKTOP (1024px and up): the section is a scroll track four
+     screens tall and the two columns pin for the whole of it, so
+     what you see holds still — every amenity listed on the left
+     with the one you are on lit, and a deck of photo cards on the
+     right. Scrolling lifts the front card up and off to show the
+     next one and moves the highlight down the list. Nothing on
+     screen moves except the deck and the highlight.
+
+     MOBILE: one column, no pin, no deck. Each amenity carries its
+     own photograph directly above its own name, which says the
+     same thing by adjacency and costs a phone none of the scroll
+     distance the track needs.
+
+     THREE THINGS HAVE TO BE KEPT IN STEP BY HAND:
+       · data-step on each <li> and on each .process__card. These
+         are what pair an amenity with its photograph, and they
+         pair by number and not by position.
+       · The DOM order of the cards IS the stacking order of the
+         deck, front to back. It has to match the reading order of
+         the list.
+       · --process-count in styles.css, which sets the length of
+         the scroll track. script.js corrects it from the real
+         count on load, so this only governs the first paint — but
+         it is what a visitor with no JavaScript gets.
+
+     The numbers themselves are drawn by CSS, not typed, so adding
+     or deleting an <li> renumbers the rest on its own.
+
+     Photos are portrait, cropped to the deck's frame — see the
+     README before dropping new ones in.
+
+     The alt text is empty on purpose. Each photo is named by the
+     step heading beside it, so filling in alt too would make a
+     screen reader say the name twice.
+     ============================================================ -->
+<section class="section section--alt section--process" id="amenities">
+
+  <!-- The blurred wash behind the section. Same four files as the
+       frame below, at a heavy blur and darkened, so what comes
+       through is the photo's colour and not its detail — the
+       ground shifts warm for the restaurant and cold for the
+       water as you read down. Purely decorative, so it is out of
+       the accessibility tree; the photos it duplicates are already
+       in the DOM below, so this costs no extra download. -->
+  <div class="process__backdrop" data-process-backdrop aria-hidden="true">
+    <img class="process__backdrop-img" src="assets/img/amenity-1.webp" alt="" data-step="0">
+    <img class="process__backdrop-img" src="assets/img/amenity-4.webp" alt="" data-step="1">
+    <img class="process__backdrop-img" src="assets/img/amenity-2.webp" alt="" data-step="2">
+    <img class="process__backdrop-img" src="assets/img/amenity-3.webp" alt="" data-step="3">
+  </div>
+
+  <div class="container process">
+
+    <!-- THE LEFT COLUMN, as one element. The wrapper exists for a
+         layout reason rather than a semantic one: without it the
+         intro and the list are two separate grid rows, the deck
+         spans both, and a row-spanning item inflates the auto rows
+         it crosses — which put 118px of empty space inside the
+         intro's own row and a gap under the heading that nothing
+         had asked for. Wrapped, the left column is one grid item
+         with its own gap, and that gap is the only number involved.
+
+         It is display: contents on a phone, so below the pinned
+         breakpoint it dissolves and the heading, the list and the
+         per-step photos flow as siblings exactly as before.
+
+         THE DECK IS DELIBERATELY OUTSIDE IT, below. It used to sit
+         between the intro and the list in source order, which is
+         why wrapping "the intro through the list" swallowed it —
+         the wrapper measured 1438px in a 900px frame. The two grid
+         children are this column and the deck, in that order. -->
+    <div class="process__col">
+
+    <!-- The intro. Stays in the left column with the amenities it
+         introduces; the photo is a sibling now rather than sitting
+         inside here, because it belongs to the other column. -->
+    <div class="process__aside" data-reveal-group>
+      <p class="eyebrow type-eyebrow">AMENITIES</p>
+      <h2 class="heading type-section-title">What We Offer</h2>
+      <p class="subhead type-body-lg">In Cedar Bluff, AL, Little River Landing is a lakefront marina resort on Weiss Lake, with waterside rooms, wood-fired dining at Hull &amp; Hearth, and a working marina for boat rentals and fuel-up, right from the dock.</p>
+    </div>
+
+    <!-- An <ol> because the numbers are real content: a screen
+         reader announces "list, 4 items" and counts them off,
+         which is the same information the 01/02/03 gives a
+         sighted reader. -->
+    <ol class="process__steps" data-process-steps data-reveal-group>
+
+      <li class="process__step" data-step="0">
+        <!-- Below 1024px the pinned frame above is hidden and each
+             amenity carries its own photo instead — a phone reads
+             this as four cards, not as one picture with a list
+             beside it. Same four files, so nothing extra
+             downloads, and alt stays empty because the title is
+             right under it. -->
+        <img class="process__step-photo" src="assets/img/amenity-1.webp" alt="">
+        <h3 class="process__title type-subsection-title fw-regular">Hull &amp; Hearth Restaurant</h3>
+      </li>
+
+      <li class="process__step" data-step="1">
+        <img class="process__step-photo" src="assets/img/amenity-4.webp" alt="">
+        <h3 class="process__title type-subsection-title fw-regular">Water Amenities</h3>
+      </li>
+
+      <li class="process__step" data-step="2">
+        <img class="process__step-photo" src="assets/img/amenity-2.webp" alt="">
+        <h3 class="process__title type-subsection-title fw-regular">Lodging</h3>
+      </li>
+
+      <li class="process__step" data-step="3">
+        <img class="process__step-photo" src="assets/img/amenity-3.webp" alt="">
+        <h3 class="process__title type-subsection-title fw-regular">On-Site Store</h3>
+      </li>
+
+    </ol>
+
+    <!-- THE CTA. One position in the markup, two behaviours, and
+         no duplicate needed for either.
+
+         On desktop it is the last item in the left column, so it
+         lands directly under the fourth amenity with the deck
+         beside it. On a phone .process__col is display: contents,
+         the wrapper dissolves, and this becomes the last child of
+         the section — which is the bottom of the section, where it
+         belongs there. The CSS only has to change its width and
+         its alignment, never its place in the document.
+
+         External, so target and rel match every other outbound
+         link on this page. rel="noopener" is not optional on a
+         _blank link: without it the opened page gets a handle on
+         this one through window.opener. -->
+    <a class="btn btn--primary type-button-caps process__cta"
+       href="https://www.enjoyuniquestays.com/rentals?city=cedar-bluff"
+       target="_blank" rel="noopener">CHECK AVAILABILITY</a>
+
+    </div><!-- /.process__col -->
+
+    <!-- The column that pins: a DECK of photo cards, holding still
+         on the right while the amenities read past it on the left.
+         Hidden below 1024px, where each amenity carries its own.
+
+         A deck rather than a crossfade. The cards are stacked in
+         reading order with the later ones peeking out below, and
+         reaching the next amenity lifts the front card up and off
+         to show the one behind it. The crossfade this replaces
+         said "the picture changed"; the deck says "there are four
+         of these and you are on the first" — the stack itself is
+         the progress indicator the numbers on the left duplicate.
+
+         Each photo is wrapped in a card because the card is what
+         moves and the photo is what fills it: the radius, the
+         shadow and the shade-when-behind all belong to the card,
+         and putting them on a transformed <img> would mean the
+         overflow clip and the transform fight over the same box.
+
+         data-step is on the card and pairs it with the step of the
+         same number on the left. Keep them in order by hand — the
+         DOM order is also the stacking order. -->
+    <div class="process__media" data-process-media data-reveal="fade">
+      <div class="process__card" data-step="0">
+        <img class="process__photo" src="assets/img/amenity-1.webp" alt="">
+      </div>
+      <div class="process__card" data-step="1">
+        <img class="process__photo" src="assets/img/amenity-4.webp" alt="">
+      </div>
+      <div class="process__card" data-step="2">
+        <img class="process__photo" src="assets/img/amenity-2.webp" alt="">
+      </div>
+      <div class="process__card" data-step="3">
+        <img class="process__photo" src="assets/img/amenity-3.webp" alt="">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     6 · LOCAL FAVOURITES  —  the amenity card, made clickable
+     Same card as section 5 and deliberately so: photo as the whole
+     card, name over the top left, a line about the place in a
+     panel across the bottom, and the same accordion on desktop.
+
+     The one difference is the tag. An amenity is a <figure>
+     because it goes nowhere; a favourite is an <a> because it
+     opens the place's page. That is also why the caption is a
+     <span> here rather than a <figcaption> — <figcaption> is only
+     valid inside a <figure>, and the styling never depended on
+     the tag.
+
+     The link takes its accessible name from the visible title
+     inside it, which is why alt is empty for the same reason it
+     is empty on an amenity: filling it in would make a screen
+     reader say the place twice before reading the description.
+
+     Add or remove an <a> freely — the row divides itself evenly.
+     ============================================================ -->
+<section class="section" id="local">
+  <div class="container center" data-reveal-group>
+    <p class="eyebrow type-eyebrow">NEARBY ATTRACTIONS</p>
+    <h2 class="heading type-section-title">Local Favourites</h2>
+    <p class="subhead type-body-lg">Canyon waterfalls, mountaintop boulders and a waterpark, all within a short drive of the dock.</p>
+  </div>
+
+  <div class="slider slider--even" data-slider>
+    <div class="slider__track" data-reveal-group="settle">
+
+      <a class="tall-card" href="https://www.nationalparks.org/explore/parks/little-river-canyon-national-preserve" target="_blank" rel="noopener">
+        <img class="tall-card__img" src="assets/img/favorite-1.webp" alt="">
+        <span class="tall-card__caption">
+          <span class="tall-card__title type-card-title">Little River Canyon Falls</span>
+          <span class="tall-card__panel">
+            <span class="tall-card__desc type-caption">A waterfall at the head of the canyon, in Little River Canyon National Preserve.</span>
+          </span>
+        </span>
+      </a>
+
+      <a class="tall-card" href="https://www.cherokeerockvillage.com/" target="_blank" rel="noopener">
+        <img class="tall-card__img" src="assets/img/favorite-2.webp" alt="">
+        <span class="tall-card__caption">
+          <span class="tall-card__title type-card-title">Cherokee Rock Village</span>
+          <span class="tall-card__panel">
+            <span class="tall-card__desc type-caption">Sandstone boulders and climbing routes on Lookout Mountain, above Weiss Lake.</span>
+          </span>
+        </span>
+      </a>
+
+      <a class="tall-card" href="https://www.greatescapesrvresorts.com/pirates-bay-waterpark/park-info/contact" target="_blank" rel="noopener">
+        <img class="tall-card__img" src="assets/img/favorite-3.webp" alt="">
+        <span class="tall-card__caption">
+          <span class="tall-card__title type-card-title">Pirate&rsquo;s Bay Waterpark</span>
+          <span class="tall-card__panel">
+            <span class="tall-card__desc type-caption">A pirate-themed waterpark at Great Escapes RV Resorts in Leesburg.</span>
+          </span>
+        </span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     7 · WHERE WE'RE LOCATED  —  copy + map + drive times
+     Wrap any place name in <strong> to make it stand out.
+
+     The heading is one line: the section names itself and the
+     lead does the welcoming, so a second italic line under it
+     would only repeat the job. Keep it short — the display face
+     at this size wraps badly past four or five words. The
+     eyebrow is the place, in two or three words; at this
+     tracking a longer label falls apart. It is the label on its
+     own — no rule beside it, since a centred stack does not need
+     a mark to tell you where it starts.
+     ============================================================ -->
+<section class="section section--map" id="location" data-theme="light">
+  <div class="container">
+    <div class="location-intro" data-reveal-group>
+      <p class="location-intro__eyebrow type-eyebrow-wide">FIND US</p>
+
+      <h2 class="location-intro__title type-section-title">
+        <span class="location-intro__line">Where We're Located</span>
+      </h2>
+
+      <p class="location-intro__lead type-body-lg">
+        On <strong>Weiss Lake</strong> in Cedar Bluff, AL &mdash; minutes from
+        <strong>Little River Canyon</strong> and Little River Canyon Falls &mdash;
+        offering lakeside rooms, a working marina, and a wood-fired restaurant
+        to relax and unwind.
+      </p>
+    </div>
+    <div class="location-grid">
+
+      <!-- THE MAP — first in the source on purpose.
+           On a phone it belongs directly under the heading, and putting
+           it first here means the reading order a screen reader follows
+           is the order the page is actually in. The desktop breakpoint
+           places it in the second column explicitly, so the two-column
+           layout is unaffected.
+           This is the live Google embed, keyed on the street address
+           rather than a place ID so it survives the listing being
+           renamed. To move the property, edit the q= address here and
+           the destination= address on the directions button below —
+           they are the same address written twice on purpose, since
+           the embed and the directions URL take different formats. -->
+      <div class="location-map" data-reveal="settle">
+        <iframe src="https://www.google.com/maps?q=1780+County+Rd+102,+Cedar+Bluff,+AL+35959&z=13&output=embed" title="Map showing Little River Landing at 1780 County Rd 102, Cedar Bluff, AL" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+      </div>
+
+      <!-- THE DETAIL — the place, then how far out it is.
+           The card names the town and gives the distances to it;
+           the street address is not printed, it lives in the
+           destination= parameter on the route button, which is the
+           only place a guest actually needs it. -->
+      <div class="location-detail" data-reveal-group>
+
+        <div class="address-card">
+          <h3 class="address-card__name type-subsection-title">Cedar Bluff, AL</h3>
+
+          <!-- Drive times, one pin each. Titles only: at three items
+               the distance IS the content, so a body line under each
+               would only pad the card. -->
+          <ul class="directions">
+            <li class="directions__item">
+              <p class="directions__title type-card-title fw-medium">
+                <span class="icon icon--pin" aria-hidden="true"></span>1.5 hrs from Chattanooga, TN
+              </p>
+            </li>
+
+            <li class="directions__item">
+              <p class="directions__title type-card-title fw-medium">
+                <span class="icon icon--pin" aria-hidden="true"></span>2 hrs from Atlanta, GA
+              </p>
+            </li>
+
+            <li class="directions__item">
+              <p class="directions__title type-card-title fw-medium">
+                <span class="icon icon--pin" aria-hidden="true"></span>2 hrs from Birmingham, AL
+              </p>
+            </li>
+          </ul>
+
+          <a class="btn btn--primary type-button-caps" href="https://www.google.com/maps/dir/?api=1&amp;destination=1780+County+Rd+102%2C+Cedar+Bluff%2C+AL+35959" target="_blank" rel="noopener">
+            <span class="icon icon--sm icon--route" aria-hidden="true"></span>GET DIRECTIONS
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     8 · TESTIMONIALS  —  badge + stats + self scrolling review rail
+     To use a review widget (Elfsight, etc.) instead, delete the
+     .review-rail block and paste the widget embed in its place.
+     ============================================================ -->
+<section class="section section--alt" id="reviews">
+  <div class="container">
+    <div class="panel" data-reveal-group>
+      <p class="eyebrow type-eyebrow">TESTIMONIALS</p>
+      <h2 class="heading type-section-title">What Our Guests Are Saying</h2>
+
+      <div class="stats">
+        <div class="stats__badge"><img src="assets/img/super-host-logo-reversed.png" alt="Airbnb Superhost" width="1374" height="712" loading="lazy" decoding="async"></div>
+        <div class="stat">
+          <div class="stat__number type-card-title fw-bold">20,000+</div>
+          <div class="stat__label type-caption">Reviews</div>
+        </div>
+        <div class="stat">
+          <div class="stat__number type-card-title fw-bold">11</div>
+          <div class="stat__label type-caption">Years Hosting</div>
+        </div>
+      </div>
+
+      <!-- A DRIVEN RAIL. It used to scroll itself on a loop, with
+           hovering as the only way to stop it; now it holds still
+           and the arrows below move it a card at a time. Where
+           there is no mouse the arrows are not there and a thumb
+           swipes the row, which is what a phone did before too.
+
+           Add or remove cards freely. The old version cloned the
+           set to close its loop, which meant the count had to be
+           EVEN or the seam did not line up — that constraint is
+           gone with the loop. One card or nine, the arrows work
+           out the distance from the cards themselves, and they
+           hide themselves if everything already fits.
+
+           data-rail-scroller marks the element that actually
+           scrolls and data-rail-items the one whose children are
+           the cards. They are two different elements here — the
+           track is wider than its viewport by design — and the
+           script needs both: the step comes from the cards, the
+           scrolling happens on the viewport. -->
+      <div class="review-rail" data-reveal="fade">
+        <div class="review-rail__viewport" data-rail-scroller>
+          <div class="review-rail__track" data-rail-items>
+
+          <article class="review">
+            <p class="review__rating" role="img" aria-label="Rated 5.0 out of 5">
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="review__score type-caption">5.0</span>
+            </p>
+
+            <p class="review__body type-body">&ldquo;First time here, we sat at a table outside, wonderful. The breeze, view, excellent service, good food, really nice place for an afternoon dinner.&rdquo;</p>
+
+            <footer class="review__guest">
+              <img class="review__avatar" src="assets/img/avatar-1.svg" alt="" width="120" height="120" loading="lazy" decoding="async">
+              <div>
+                <p class="review__name type-body-lg fw-semibold">Jimmy</p>
+              </div>
+            </footer>
+          </article>
+
+          <article class="review">
+            <p class="review__rating" role="img" aria-label="Rated 5.0 out of 5">
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="review__score type-caption">5.0</span>
+            </p>
+
+            <p class="review__body type-body">&ldquo;Great location. Reminded me of Ozark. I kept thinking, Ruth is gonna walk up any minute! We had a view of the lake through the trees from the little porch outside the room. The marina has a store and a restaurant. The restaurant was very good. Beautiful view from the deck though. This is close to Cedar Bluff and convenient to restaurants and stores.&rdquo;</p>
+
+            <footer class="review__guest">
+              <img class="review__avatar" src="assets/img/avatar-2.svg" alt="" width="120" height="120" loading="lazy" decoding="async">
+              <div>
+                <p class="review__name type-body-lg fw-semibold">Andrea</p>
+              </div>
+            </footer>
+          </article>
+
+          <article class="review">
+            <p class="review__rating" role="img" aria-label="Rated 5.0 out of 5">
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="review__score type-caption">5.0</span>
+            </p>
+
+            <p class="review__body type-body">&ldquo;This place has been totally redone. They now have a steakhouse and the food is amazing. There&rsquo;s a new deck where you can sit outside to eat if you like. The view is beautiful. We had a steak with fried okra and pasta salad &mdash; everything was delicious and perfectly cooked. Delicious and fresh.&rdquo;</p>
+
+            <footer class="review__guest">
+              <img class="review__avatar" src="assets/img/avatar-3.svg" alt="" width="120" height="120" loading="lazy" decoding="async">
+              <div>
+                <p class="review__name type-body-lg fw-semibold">Jennifer</p>
+              </div>
+            </footer>
+          </article>
+
+          <article class="review">
+            <p class="review__rating" role="img" aria-label="Rated 5.0 out of 5">
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
+              <span class="review__score type-caption">5.0</span>
+            </p>
+
+            <p class="review__body type-body">&ldquo;I&rsquo;ve been coming to this marina for years. It was very quiet at night time and left the fishing rods in the back of the truck for 3 nights and no one touched them. Nice family atmosphere. Everyone that worked there was super nice and very helpful. Thinking about going back this weekend.&rdquo;</p>
+
+            <footer class="review__guest">
+              <img class="review__avatar" src="assets/img/avatar-4.svg" alt="" width="120" height="120" loading="lazy" decoding="async">
+              <div>
+                <p class="review__name type-body-lg fw-semibold">Scott</p>
+              </div>
+            </footer>
+          </article>
+
+          </div>
+        </div>
+
+        <!-- Centred rather than up beside the heading, which is
+             where the other rail on this page put its arrows. This
+             panel's header is centre aligned, so arrows hung to one
+             side of it would be the only off-centre thing in the
+             block. type="button" so they never submit the offer
+             form higher up the page.
+
+             The label says what the control does, not what the
+             glyph is — a screen reader user is told "previous
+             reviews", and the chevron is aria-hidden because it
+             carries no information the label does not. -->
+        <div class="rail-nav rail-nav--center" data-rail-nav>
+          <button class="rail-nav__btn" type="button" data-rail-prev aria-label="Previous reviews">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+          </button>
+          <button class="rail-nav__btn" type="button" data-rail-next aria-label="Next reviews">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <path d="m9 18 6-6-6-6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     9 · CLOSING OFFER  —  same offer as section 2, restated
+     The hero's footage and a card laid over it, not a split. The card
+     straddles the photo's edge — part of it on the picture, part
+     of it on the plate behind — so the block reads as one
+     layered object rather than two panels sitting side by side.
+
+     It carries data-theme="dark" in the markup, so it stays a
+     dark closing plate whichever theme the page is set to. Swap
+     that attribute to "light" for the inverse.
+     ============================================================ -->
+<section class="section" id="claim">
+  <div class="container">
+    <div class="claim" data-theme="dark" data-reveal-group>
+
+      <!-- THE FOOTAGE — the same clip as the hero, restated with the
+           offer, the way the copy is. A band across the top on a
+           phone, the left three quarters of the plate on a desktop,
+           so one file has to survive both crops.
+
+           Same four attributes as the hero, autoplay included: a
+           scripted play() is a second thing that can be refused, and
+           the browser starting it itself is the path that is known to
+           work on this page. Both Chrome and Safari hold an
+           offscreen muted autoplay until it scrolls into view on
+           their own, so the attribute does not cost a load up front
+           the way it reads. script.js pauses it again on the way out
+           and holds it on the poster under reduced motion. -->
+      <figure class="claim__media" data-reveal="settle">
+        <video class="claim__video"
+               poster="assets/video/hero-poster.webp"
+               autoplay muted loop playsinline preload="metadata"
+               aria-hidden="true"
+               data-play-in-view>
+          <source src="assets/video/hero.webm" type="video/webm">
+          <source src="assets/video/hero.mp4" type="video/mp4">
+        </video>
+
+        <!-- A vignette over the top of the photograph, so the plate's
+             top corners and the lip highlight along them have
+             something to sit against whatever the picture is doing
+             up there. -->
+        <span class="claim__veil" aria-hidden="true"></span>
+      </figure>
+
+      <!-- THE OFFER — the card that overlaps the photograph -->
+      <div class="claim__card">
+        <!-- No <br>. The card is a fixed 480px rail on a desktop and
+             the full width of the plate on a phone, so a hand placed
+             break is right at one of those and wrong at the other.
+             text-wrap: balance arrives with .type-section-title and
+             evens the lines out at whichever width it lands on. -->
+        <h2 class="claim__title type-section-title">
+          Don't forget to redeem your <span class="claim__amount">10% off</span>
+        </h2>
+
+        <!-- Point action= at your form handler (GoHighLevel form URL, etc.) -->
+        <form class="offer-form offer-form--claim" action="[FORM ACTION URL]" method="post">
+          <!-- Invisible on screen, not to a screen reader. See the note on
+               the hero's copy of this label. -->
+          <label class="offer-form__label" for="closing-email">Email address</label>
+
+          <div class="offer-form__control">
+            <div class="offer-form__field">
+              <span class="offer-form__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3 6 9 6 9-6"/></svg>
+              </span>
+              <input class="offer-form__input type-body" id="closing-email" type="email" name="email" placeholder="Enter your email" required autocomplete="email">
+            </div>
+            <button class="btn btn--primary type-button-caps" type="submit">CLAIM 10% OFF</button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     10 · FOOTER
+     ============================================================ -->
+<footer class="footer" data-reveal-group>
+  <p class="footer__label type-caption">Marketing By</p>
+  <a class="footer__logo" href="https://hiddengem.media" target="_blank" rel="noopener">
+    <!-- The wordmark is a single SVG, so it stays sharp at any size and
+         the gold mark keeps its colour on the dark page. It is 157x19 —
+         an 8:1 wordmark — so it is capped by WIDTH in styles.css, not
+         by height the way the hero's logo is. alt names the agency
+         rather than describing the mark: the link goes to them, and
+         that is what a screen reader needs to hear. -->
+    <img src="assets/img/hiddengem-logo.svg" alt="Hidden Gem Media" width="157" height="19">
+  </a>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

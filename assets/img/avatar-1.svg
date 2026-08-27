@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="1 placeholder">
+  <circle cx="60.0" cy="60.0" r="58.0" fill="#d9d5cd" stroke="#a9a29a" stroke-width="2" stroke-dasharray="8 6"/>
+  <g font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" text-anchor="middle" fill="#6d675f">
+    <text x="60.0" y="58.0" font-size="14" font-weight="600" letter-spacing="1">1</text>
+    <text x="60.0" y="80.0" font-size="11" fill="#8c857c">120 x 120</text>
+  </g>
+</svg>

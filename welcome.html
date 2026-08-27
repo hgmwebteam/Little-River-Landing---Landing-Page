@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<!-- POST SIGN-UP / THANK YOU PAGE
+     Where the hero form on index.html sends a visitor once they have
+     handed over an email. Two sections and the footer:
+
+       1 · WELCOME   the back link, the mark, the greeting, and the
+                     discount code — the whole reason the page exists
+       2 · AMENITIES the same "What We Offer" section as index.html,
+                     verbatim, so the page has somewhere to go next
+
+     Same theme, same stylesheet and same script as index.html. Nothing
+     here is a second copy of a component: the media layers, the logo,
+     the buttons and the whole amenities block are the classes that
+     page already ships. -->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ============================================================
+     EDIT ME  ·  PAGE TITLE + SOCIAL SHARE
+     noindex because a confirmation page has no business in search
+     results — it is reached from the form and nowhere else.
+     ============================================================ -->
+<title>Welcome | Little River Landing</title>
+<meta name="robots" content="noindex, follow">
+<meta name="description" content="Your 10% off code for Little River Landing.">
+<meta property="og:title" content="Welcome to Little River Landing">
+<meta property="og:description" content="Your 10% off code is ready.">
+<meta property="og:image" content="assets/img/og-image.svg">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/img/logo-mark.svg">
+
+<!-- ============================================================
+     FONTS  —  identical to index.html. Keep the two in step.
+     ============================================================ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spectral:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     DESIGN SYSTEM
+     Same three files, same order, same reasons. brand-contrast.js
+     is synchronous and in <head> on purpose — it has to run before
+     first paint. Do not add defer or async.
+     ============================================================ -->
+<link rel="stylesheet" href="_template.css">
+<link rel="stylesheet" href="styles.css">
+<script src="brand-contrast.js"></script>
+
+<!-- ============================================================
+     SCROLL REVEAL GATE  —  see index.html for the full note.
+     ============================================================ -->
+<script>
+  (function (html) {
+    if (!('IntersectionObserver' in window)) return;
+    if (window.matchMedia
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    html.classList.add('reveal-on');
+  })(document.documentElement);
+</script>
+</head>
+
+<body>
+
+<!-- ============================================================
+     1 · WELCOME  —  back link, mark, greeting, discount code
+
+     Built on .hero-offer so the video, both scrims and the seam
+     are the components index.html already ships. The modifier is
+     the only thing that differs, and it changes three things:
+     the copy centres rather than sitting low, the frame is
+     shorter than the marketing hero, and the code plate has to
+     clear the fold on a phone. Nothing about the media layers
+     changes, so re-cutting the footage is still one edit in one
+     place for both pages.
+     ============================================================ -->
+<header class="hero-offer hero-offer--welcome">
+
+  <div class="hero-offer__media">
+    <!-- Same clip as the hero on index.html and the same four
+         attributes for the same reasons: muted and playsinline are
+         what let it autoplay at all, loop is what stops it ending
+         on a frozen frame, and the poster is the whole background
+         for a visitor who asks for reduced motion. -->
+    <video class="hero-offer__video"
+           poster="assets/video/hero-poster.webp"
+           autoplay muted loop playsinline preload="auto"
+           aria-hidden="true">
+      <source src="assets/video/hero.webm" type="video/webm">
+      <source src="assets/video/hero.mp4" type="video/mp4">
+    </video>
+    <div class="hero-offer__scrim" aria-hidden="true"></div>
+    <div class="hero-offer__seam" aria-hidden="true"></div>
+  </div>
+
+  <div class="hero-offer__inner welcome">
+
+    <!-- THE BACK LINK. An <a> and not a button, and pointed at the
+         landing page rather than at history.back(): this page is
+         also arrived at cold, from the confirmation email, where
+         there is no history to go back to and a button would do
+         nothing at all. The chevron is the same glyph and the same
+         inline SVG the review rail's arrows use, aria-hidden
+         because the word beside it already says what this does. -->
+    <a class="back-link type-button-caps" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path d="m15 18-6-6 6-6"/>
+      </svg>
+      Back
+    </a>
+
+    <!-- The mark. Same component as the hero's, so it is sized by
+         height and keeps its own ratio; it is only centred here. -->
+    <a class="hero-offer__logo" href="[BRAND WEBSITE URL]" target="_blank" rel="noopener">
+      <img src="assets/img/logo-mark.svg" alt="Little River Landing">
+    </a>
+
+    <!-- The greeting is the h1: it is the thing that reads as
+         primary on this page. Keep it short — the column is the
+         same width the hero's headline is measured in, and a
+         greeting that runs to three lines stops greeting anyone. -->
+    <h1 class="hero-offer__title type-hero welcome__title">You&rsquo;re in. Welcome aboard.</h1>
+
+    <!-- THE CODE PLATE — the whole reason this page exists.
+
+         A coupon, not a form field: brand-50 ground, a dashed
+         accent edge, notched ends and the code set large in
+         brand-950. It is opaque for the same reason it always was
+         — it sits over footage nobody has vetted, and a bright
+         frame drifting underneath must not be able to take the
+         code's contrast with it. Going light rather than dark just
+         means the plate now separates from the scrim by being the
+         one bright thing on the page instead of the one dark one.
+
+         There is no eyebrow over it any more. A dashed coupon
+         holding eight capitals and a Copy button does not need a
+         label reading YOUR DISCOUNT CODE; the alt-free plate says
+         it, and the button beside it names the action.
+
+         The code itself is in a <span>, not an <input>. An input
+         would be a form control that submits nothing and that a
+         screen reader would announce as one; this is a value to be
+         read and copied, which is what the copy button is for. The
+         button is progressive — with no JavaScript it is hidden by
+         script.js's own absence and the code is still there to be
+         selected by hand, which is why the value is real text.
+
+         EDIT ME: change the code in BOTH places — the text below
+         and the data-code attribute on the button, which is what
+         actually reaches the clipboard. -->
+    <div class="code">
+      <div class="code__plate">
+        <span class="code__value type-code">WELCOM10</span>
+
+        <!-- type="button" so it can never submit anything, and the
+             label names the action rather than the glyph. The live
+             region below is what confirms the copy landed — a
+             button that silently changes its own label tells a
+             sighted visitor and nobody else. -->
+        <button class="code__copy type-button-caps" type="button" hidden
+                data-copy data-code="WELCOM10"
+                aria-label="Copy discount code WELCOM10">Copy</button>
+      </div>
+
+      <!-- role="status" is polite: it is announced when the visitor
+           is between things rather than interrupting them. Empty at
+           rest, and it reserves no space until it has something to
+           say. -->
+      <p class="code__status type-caption" role="status" data-copy-status></p>
+    </div>
+
+    <!-- THE CLOSING BLOCK. Two lines, both answering the question
+         the plate raises — where else is my code — which is why
+         they sit directly under it. Separate paragraphs and
+         separate sizes on purpose: the first is news, the second
+         is housekeeping, and flattening them into one block makes
+         the visitor read the housekeeping to find the news. -->
+    <p class="welcome__note type-body">Your discount code is also in your inbox!</p>
+    <p class="welcome__note welcome__note--fine type-caption">
+      Check junk/promotions if it&rsquo;s missing and apply at checkout.
+    </p>
+
+  </div>
+</header>
+
+<!-- ============================================================
+     2 · AMENITIES  —  the same "What We Offer" section as
+     index.html, copied verbatim. Same markup, same classes, same
+     photographs, and the same driver in script.js picks it up
+     here with no change: it binds to [data-process-steps] rather
+     than to the page.
+
+     KEEP THE TWO IN STEP. If an amenity is added, renamed or
+     re-photographed on index.html, the same edit has to land here
+     — the two blocks are identical on purpose and nothing checks
+     that they still are.
+     ============================================================ -->
+<section class="section section--alt section--process" id="amenities">
+
+  <!-- The blurred wash behind the section. Same four files as the
+       frame below, at a heavy blur and darkened, so what comes
+       through is the photo's colour and not its detail — the
+       ground shifts warm for the restaurant and cold for the
+       water as you read down. Purely decorative, so it is out of
+       the accessibility tree; the photos it duplicates are already
+       in the DOM below, so this costs no extra download. -->
+  <div class="process__backdrop" data-process-backdrop aria-hidden="true">
+    <img class="process__backdrop-img" src="assets/img/amenity-1.webp" alt="" data-step="0">
+    <img class="process__backdrop-img" src="assets/img/amenity-4.webp" alt="" data-step="1">
+    <img class="process__backdrop-img" src="assets/img/amenity-2.webp" alt="" data-step="2">
+    <img class="process__backdrop-img" src="assets/img/amenity-3.webp" alt="" data-step="3">
+  </div>
+
+  <div class="container process">
+
+    <!-- THE LEFT COLUMN, as one element. The wrapper exists for a
+         layout reason rather than a semantic one: without it the
+         intro and the list are two separate grid rows, the deck
+         spans both, and a row-spanning item inflates the auto rows
+         it crosses — which put 118px of empty space inside the
+         intro's own row and a gap under the heading that nothing
+         had asked for. Wrapped, the left column is one grid item
+         with its own gap, and that gap is the only number involved.
+
+         It is display: contents on a phone, so below the pinned
+         breakpoint it dissolves and the heading, the list and the
+         per-step photos flow as siblings exactly as before.
+
+         THE DECK IS DELIBERATELY OUTSIDE IT, below. It used to sit
+         between the intro and the list in source order, which is
+         why wrapping "the intro through the list" swallowed it —
+         the wrapper measured 1438px in a 900px frame. The two grid
+         children are this column and the deck, in that order. -->
+    <div class="process__col">
+
+    <!-- The intro. Stays in the left column with the amenities it
+         introduces; the photo is a sibling now rather than sitting
+         inside here, because it belongs to the other column. -->
+    <div class="process__aside" data-reveal-group>
+      <p class="eyebrow type-eyebrow">AMENITIES</p>
+      <h2 class="heading type-section-title">What We Offer</h2>
+      <p class="subhead type-body-lg">In Cedar Bluff, AL, Little River Landing is a lakefront marina resort on Weiss Lake, with waterside rooms, wood-fired dining at Hull &amp; Hearth, and a working marina for boat rentals and fuel-up, right from the dock.</p>
+    </div>
+
+    <!-- An <ol> because the numbers are real content: a screen
+         reader announces "list, 4 items" and counts them off,
+         which is the same information the 01/02/03 gives a
+         sighted reader. -->
+    <ol class="process__steps" data-process-steps data-reveal-group>
+
+      <li class="process__step" data-step="0">
+        <!-- Below 1024px the pinned frame above is hidden and each
+             amenity carries its own photo instead — a phone reads
+             this as four cards, not as one picture with a list
+             beside it. Same four files, so nothing extra
+             downloads, and alt stays empty because the title is
+             right under it. -->
+        <img class="process__step-photo" src="assets/img/amenity-1.webp" alt="">
+        <h3 class="process__title type-subsection-title fw-regular">Hull &amp; Hearth Restaurant</h3>
+      </li>
+
+      <li class="process__step" data-step="1">
+        <img class="process__step-photo" src="assets/img/amenity-4.webp" alt="">
+        <h3 class="process__title type-subsection-title fw-regular">Water Amenities</h3>
+      </li>
+
+      <li class="process__step" data-step="2">
+        <img class="process__step-photo" src="assets/img/amenity-2.webp" alt="">
+        <h3 class="process__title type-subsection-title fw-regular">Lodging</h3>
+      </li>
+
+      <li class="process__step" data-step="3">
+        <img class="process__step-photo" src="assets/img/amenity-3.webp" alt="">
+        <h3 class="process__title type-subsection-title fw-regular">On-Site Store</h3>
+      </li>
+
+    </ol>
+
+    <!-- THE CTA. One position in the markup, two behaviours, and
+         no duplicate needed for either.
+
+         On desktop it is the last item in the left column, so it
+         lands directly under the fourth amenity with the deck
+         beside it. On a phone .process__col is display: contents,
+         the wrapper dissolves, and this becomes the last child of
+         the section — which is the bottom of the section, where it
+         belongs there. The CSS only has to change its width and
+         its alignment, never its place in the document.
+
+         External, so target and rel match every other outbound
+         link on this page. rel="noopener" is not optional on a
+         _blank link: without it the opened page gets a handle on
+         this one through window.opener. -->
+    <a class="btn btn--primary type-button-caps process__cta"
+       href="https://www.enjoyuniquestays.com/rentals?city=cedar-bluff"
+       target="_blank" rel="noopener">CHECK AVAILABILITY</a>
+
+    </div><!-- /.process__col -->
+
+    <!-- The column that pins: a DECK of photo cards, holding still
+         on the right while the amenities read past it on the left.
+         Hidden below 1024px, where each amenity carries its own.
+
+         A deck rather than a crossfade. The cards are stacked in
+         reading order with the later ones peeking out below, and
+         reaching the next amenity lifts the front card up and off
+         to show the one behind it. The crossfade this replaces
+         said "the picture changed"; the deck says "there are four
+         of these and you are on the first" — the stack itself is
+         the progress indicator the numbers on the left duplicate.
+
+         Each photo is wrapped in a card because the card is what
+         moves and the photo is what fills it: the radius, the
+         shadow and the shade-when-behind all belong to the card,
+         and putting them on a transformed <img> would mean the
+         overflow clip and the transform fight over the same box.
+
+         data-step is on the card and pairs it with the step of the
+         same number on the left. Keep them in order by hand — the
+         DOM order is also the stacking order. -->
+    <div class="process__media" data-process-media data-reveal="fade">
+      <div class="process__card" data-step="0">
+        <img class="process__photo" src="assets/img/amenity-1.webp" alt="">
+      </div>
+      <div class="process__card" data-step="1">
+        <img class="process__photo" src="assets/img/amenity-4.webp" alt="">
+      </div>
+      <div class="process__card" data-step="2">
+        <img class="process__photo" src="assets/img/amenity-2.webp" alt="">
+      </div>
+      <div class="process__card" data-step="3">
+        <img class="process__photo" src="assets/img/amenity-3.webp" alt="">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     3 · FOOTER  —  the same footer as index.html.
+     ============================================================ -->
+<footer class="footer" data-reveal-group>
+  <p class="footer__label type-caption">Marketing By</p>
+  <a class="footer__logo" href="https://hiddengem.media" target="_blank" rel="noopener">
+    <!-- The wordmark is a single SVG, so it stays sharp at any size and
+         the gold mark keeps its colour on the dark page. It is 157x19 —
+         an 8:1 wordmark — so it is capped by WIDTH in styles.css, not
+         by height the way the hero's logo is. alt names the agency
+         rather than describing the mark: the link goes to them, and
+         that is what a screen reader needs to hear. -->
+    <img src="assets/img/hiddengem-logo.svg" alt="Hidden Gem Media" width="157" height="19">
+  </a>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

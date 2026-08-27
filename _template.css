@@ -1,0 +1,862 @@
+/* ============================================================================
+   DESIGN SYSTEM — SINGLE FILE BUILD
+   ----------------------------------------------------------------------------
+   Concatenation of six source layers, in required order:
+     1. _base.css            reset + 8pt spacing scale + layout tokens
+     2. _brand-auto.css      generates two brand ramps from two hexes
+     3. _primitives.css      fixed gray / success / warning / error ramps
+     4. _semantic-roles.css  colour role map, light + dark
+     5. _type-primitives.css Untitled UI type scale + two font slots
+     6. _type-roles.css      type role classes + mobile step down
+
+   Order matters. Do not rearrange.
+
+   ============================================================================
+   REQUIRED IN YOUR <head> — THIS FILE ALONE IS NOT ENOUGH
+
+     <meta name="viewport" content="width=device-width, initial-scale=1">
+       Without it, mobile renders at 980px and the 767px breakpoint never
+       fires. Every mobile step down in this file silently does nothing.
+
+     <link> to your two font families
+       This file names the families. It does not load them. Unloaded families
+       fall back to Georgia and the system sans, and the whole type system
+       looks generic while appearing to work.
+
+     <script src="brand-contrast.js"></script>
+       Synchronous, in <head>, after this file.
+
+   ============================================================================
+   PER CLIENT SWAP — FOUR LINES
+
+     --brand-base    primary brand hex
+     --accent-base   secondary brand hex
+     --font-display  headline family
+     --font-body     body family
+   ============================================================================ */
+
+
+/* ####################  _base.css  #################### */
+
+/* ============================================================================
+   BASE — reset + spacing scale
+   ----------------------------------------------------------------------------
+   Must load FIRST, before the token and role layers.
+
+   Two jobs. Reset the browser defaults that fight an 8pt grid, and define the
+   spacing scale that rule 7 assumes exists. Without the scale, "every margin
+   is a multiple of 8" is a rule with no tokens behind it, and you end up
+   typing raw pixel values, which is what the system exists to prevent.
+   ============================================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Browser default heading margins are em based, so they scale with font size
+   and land on arbitrary fractional pixels. Zero them and let the spacing
+   scale do the work. */
+html, body, h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd, ul, ol {
+  margin: 0;
+  padding: 0;
+}
+
+ul[class], ol[class] { list-style: none; }
+
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+input, button, textarea, select { font: inherit; color: inherit; }
+
+/* Headings inherit their weight from the type role classes, not from the
+   browser's default bold. */
+h1, h2, h3, h4, h5, h6 { font-weight: inherit; font-size: inherit; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root {
+  /* ---------------- 8PT SPACING SCALE ----------------
+     Every margin, padding, and gap comes from here. --space-1 is the only
+     value below 8; it exists for icon to label gaps and nothing else. */
+  --space-0:  0;
+  --space-1:  0.25rem;   /* 4px  — icon gaps only */
+  --space-2:  0.5rem;    /* 8px  */
+  --space-3:  1rem;      /* 16px */
+  --space-4:  1.5rem;    /* 24px */
+  --space-5:  2rem;      /* 32px */
+  --space-6:  2.5rem;    /* 40px */
+  --space-7:  3rem;      /* 48px */
+  --space-8:  3.5rem;    /* 56px */
+  --space-9:  4rem;      /* 64px */
+  --space-10: 5rem;      /* 80px */
+  --space-12: 6rem;      /* 96px */
+  --space-16: 8rem;      /* 128px */
+
+  /* ---------------- LAYOUT ---------------- */
+  --section-y:      var(--space-12);   /* vertical padding on a page section */
+  --container-max:  75rem;             /* 1200px */
+  --container-x:    var(--space-3);    /* gutter — also the carousel edge pad */
+  --radius-sm:      0.5rem;            /* 8px  */
+  --radius-md:      0.75rem;           /* 12px */
+  --radius-lg:      1rem;              /* 16px */
+}
+
+@media (max-width: 767px) {
+  :root { --section-y: var(--space-9); }   /* 96px -> 64px */
+}
+
+.container {
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-x);
+}
+
+.section { padding-block: var(--section-y); }
+
+/* ####################  _brand-auto.css  #################### */
+
+/* ============================================================================
+   BRAND AUTO RAMP — replaces the hand generated brand and accent ramps
+   ----------------------------------------------------------------------------
+   Set two hexes at the top. Both eleven step ramps generate themselves.
+   Everything downstream (_semantic-roles.css) is unchanged.
+
+   Load order: this file, then _primitives.css for the neutral and semantic
+   ramps only, then _semantic-roles.css.
+
+   HOW IT WORKS
+   oklch(from <color> L C H) rebuilds a color while keeping the parts you do
+   not overwrite. Each step below pins an absolute OKLCH lightness, keeps the
+   client's hue verbatim, and scales chroma so the pale end does not go neon
+   and the dark end does not go muddy.
+
+   WHY OKLCH AND NOT HSL OR color-mix
+   OKLCH lightness tracks perceived lightness, so the same L lands at roughly
+   the same contrast no matter the hue. Measured across seven hues, the 700
+   step ranges 5.80 to 6.78 against white. HSL would swing far wider, because
+   HSL thinks yellow at 50 percent lightness and blue at 50 percent lightness
+   are equally light. They are not.
+   ============================================================================ */
+
+:root {
+  /* Client: Little River Landing, applied 2026-08-26 */
+  --brand-base:  #153338;
+  --accent-base: #b07b3e;
+}
+
+:root {
+  /* BRAND */
+  --brand-50:  oklch(from var(--brand-base) 0.973 calc(c * 0.20) h);
+  --brand-100: oklch(from var(--brand-base) 0.945 calc(c * 0.36) h);
+  --brand-200: oklch(from var(--brand-base) 0.895 calc(c * 0.60) h);
+  --brand-300: oklch(from var(--brand-base) 0.828 calc(c * 0.80) h);
+  --brand-400: oklch(from var(--brand-base) 0.752 calc(c * 0.95) h);
+  --brand-500: oklch(from var(--brand-base) 0.652 calc(c * 1.00) h);
+  --brand-600: oklch(from var(--brand-base) 0.585 calc(c * 1.00) h);
+  --brand-700: oklch(from var(--brand-base) 0.492 calc(c * 0.95) h);
+  --brand-800: oklch(from var(--brand-base) 0.432 calc(c * 0.88) h);
+  --brand-900: oklch(from var(--brand-base) 0.382 calc(c * 0.80) h);
+  --brand-950: oklch(from var(--brand-base) 0.265 calc(c * 0.60) h);
+
+  /* ACCENT */
+  --accent-50:  oklch(from var(--accent-base) 0.973 calc(c * 0.20) h);
+  --accent-100: oklch(from var(--accent-base) 0.945 calc(c * 0.36) h);
+  --accent-200: oklch(from var(--accent-base) 0.895 calc(c * 0.60) h);
+  --accent-300: oklch(from var(--accent-base) 0.828 calc(c * 0.80) h);
+  --accent-400: oklch(from var(--accent-base) 0.752 calc(c * 0.95) h);
+  --accent-500: oklch(from var(--accent-base) 0.652 calc(c * 1.00) h);
+  --accent-600: oklch(from var(--accent-base) 0.585 calc(c * 1.00) h);
+  --accent-700: oklch(from var(--accent-base) 0.492 calc(c * 0.95) h);
+  --accent-800: oklch(from var(--accent-base) 0.432 calc(c * 0.88) h);
+  --accent-900: oklch(from var(--accent-base) 0.382 calc(c * 0.80) h);
+  --accent-950: oklch(from var(--accent-base) 0.265 calc(c * 0.60) h);
+
+  /* ------------------------------------------------------------------
+     IDENTITY OVERRIDE — important
+     The generator discards the input hex's lightness, so --brand-500 will
+     NOT equal the client's logo hex. That is deliberate: it means any tint
+     of their brand produces the same usable scale. But the logo still has
+     to be the exact color they signed off on, so identity points at the raw
+     input, never at a generated step.
+     ------------------------------------------------------------------ */
+  --color-brand-identity:  var(--brand-base);
+  --color-accent-identity: var(--accent-base);
+}
+
+/* ============================================================================
+   FALLBACK
+   Relative color syntax has shipped in Chrome, Safari, and Firefox for a
+   while now, but GoHighLevel embeds sometimes land in older in app webviews.
+   This keeps text legible if the generator is unsupported.
+   ============================================================================ */
+
+@supports not (color: oklch(from red l c h)) {
+  :root {
+    --brand-50:  #F5F5F5;  --brand-100: #EBEBEB; --brand-200: #D6D6D6;
+    --brand-300: #B8B8B8;  --brand-400: #949494; --brand-500: var(--brand-base);
+    --brand-600: #4A4A4A;  --brand-700: #3A3A3A; --brand-800: #2E2E2E;
+    --brand-900: #242424;  --brand-950: #141414;
+
+    --accent-50:  #F5F5F5; --accent-100: #EBEBEB; --accent-200: #D6D6D6;
+    --accent-300: #B8B8B8; --accent-400: #949494; --accent-500: var(--accent-base);
+    --accent-600: #4A4A4A; --accent-700: #3A3A3A; --accent-800: #2E2E2E;
+    --accent-900: #242424; --accent-950: #141414;
+  }
+}
+
+/* ============================================================================
+   WHAT THIS DOES NOT DO
+
+   1. It does not guarantee contrast, it approximates it.
+      Fixed OKLCH lightness lands 700 between roughly 5.8 and 6.8 against
+      white across normal hues, so it clears 4.5 with margin. But it is a
+      prediction, not a measurement. Spot check --color-bg-brand-solid with
+      white text on the first build of every new client. Two minutes, and it
+      is the only step that actually matters.
+
+   2. It does not check hue separation.
+      If a client hands you two brand colors 180 degrees apart, this will
+      generate both happily and they will vibrate against each other. That
+      judgement stays with you.
+
+   3. It does not touch gray, success, warning, or error.
+      Those stay fixed in _primitives.css across every client, which is
+      correct. Red should mean error at every client you build for.
+
+   4. It cannot fix a bad input.
+      A near gray brand hex has almost no chroma, so every step comes out
+      gray. A neon input clips at the gamut edge in the mid range. Neither
+      is a bug in this file.
+   ============================================================================ */
+
+/* ####################  _primitives.css  #################### */
+
+/* ============================================================================
+   PRIMITIVES — Layer 1 (FIXED RAMPS ONLY)
+   ----------------------------------------------------------------------------
+   Neutral and semantic ramps. These are identical for every client and never
+   auto generate. Red means error everywhere; that is the point.
+
+   Brand and accent are NOT here. They are generated per client in
+   _brand-auto.css from two input hexes.
+
+   Load order: _brand-auto.css, this file, _semantic-roles.css, brand-contrast.js
+   ============================================================================ */
+
+:root {
+  /* NEUTRAL — cool, near desaturated (6 to 10 percent). Deliberately
+     not green tinted so it stays impartial between two near complementary hues. */
+  --gray-50: #F5F6F7;
+  --gray-100: #E9EAEC;
+  --gray-200: #D6D8DB;
+  --gray-300: #BBBEC3;
+  --gray-400: #B0B3B9;
+  --gray-500: #8E939B;
+  --gray-600: #7D818B;
+  --gray-700: #60656E;
+  --gray-800: #4E525C;
+  --gray-900: #41464E;
+  --gray-950: #25282D;
+
+  /* SUCCESS — hue 158, pushed toward teal and away from the brand green
+     so a success state never reads as brand chrome. */
+  --success-50: #F1FBF7;
+  --success-100: #E0F5ED;
+  --success-200: #C6ECDE;
+  --success-300: #A4DFCA;
+  --success-400: #56C69D;
+  --success-500: #30A57A;
+  --success-600: #27926A;
+  --success-700: #1C7252;
+  --success-800: #195E44;
+  --success-900: #164E3A;
+  --success-950: #0C2E21;
+
+  /* WARNING — amber, hue 38. */
+  --warning-50: #FFF8EE;
+  --warning-100: #FDF0D8;
+  --warning-200: #FBE2B6;
+  --warning-300: #F6D292;
+  --warning-400: #EBA630;
+  --warning-500: #C68514;
+  --warning-600: #AE7613;
+  --warning-700: #865C12;
+  --warning-800: #6D4C12;
+  --warning-900: #5C4111;
+  --warning-950: #35250A;
+
+  /* ERROR — red, hue 2. */
+  --error-50: #FEF1F1;
+  --error-100: #FCE2E1;
+  --error-200: #F8C8C6;
+  --error-300: #F2A9A6;
+  --error-400: #F09D9B;
+  --error-500: #E76D68;
+  --error-600: #DD514D;
+  --error-700: #BD2C27;
+  --error-800: #992824;
+  --error-900: #802522;
+  --error-950: #4B1513;
+}
+
+/* ####################  _semantic-roles.css  #################### */
+
+/* ============================================================================
+   SEMANTIC ROLE MAP — Layer 2
+   ----------------------------------------------------------------------------
+   Layer 1 (primitives) lives in the per client brand file and defines the raw
+   ramps: --brand-50 through --brand-950, --gray-*, --success-*, --warning-*,
+   --error-*.
+
+   This file never contains a hex. Every role points at a primitive by var name,
+   so a client brand file that redefines --brand-* automatically retints every
+   role downstream. That is the whole reason the two layers are split.
+
+   IMPORT ORDER: primitives first, this file second. If a brand file loads after
+   this one it still works, because these are references, not copies.
+   ============================================================================ */
+
+:root, [data-theme="light"] {
+  /* ------------------------------------------------------------------
+     SCOPED INVERSION
+     The light theme is selectable, not just the document default. Any
+     element carrying data-theme="light" inside a data-theme="dark" page
+     becomes a full light surface — text, secondary text, borders, inputs,
+     disabled states, all of it. Custom properties inherit from the nearest
+     ancestor that sets them, so nesting just works.
+
+       <html data-theme="dark">
+         <div class="card" data-theme="light">   <- light card on a dark page
+
+     This is why there is no --color-bg-inverse token and should never be one.
+     An inverse surface needs an inverse everything; a suffixed pair covers
+     three cases and then you are rebuilding the whole role map by hand.
+     ------------------------------------------------------------------ */
+
+  /* ------------------------------------------------------------------
+     TEXT
+     Minimum 4.5:1 for body, 3:1 for large or bold 18pt and up.
+     ------------------------------------------------------------------ */
+  --color-text-primary:      var(--gray-900);
+  --color-text-secondary:    var(--gray-700);
+  --color-text-tertiary:     var(--gray-600);
+  --color-text-disabled:     var(--gray-400);
+  --color-text-brand:        var(--brand-700);  /* first step that passes AA */
+  --color-text-error:        var(--error-700);
+  --color-text-success:      var(--success-700);
+  --color-text-warning:      var(--warning-700);
+  --color-text-on-solid:     #FFFFFF;           /* text sitting on *-solid */
+  --color-text-accent:       var(--accent-700);
+
+  /* ------------------------------------------------------------------
+     SURFACES
+     ------------------------------------------------------------------ */
+  --color-bg-primary:        #FFFFFF;
+  --color-bg-secondary:      var(--gray-50);
+  --color-bg-tertiary:       var(--gray-100);
+  --color-bg-disabled:       var(--gray-100);
+
+  --color-bg-brand-subtle:   var(--brand-50);   /* tinted sections, table rows */
+  --color-bg-brand-muted:    var(--brand-100);  /* badges, pills, hover on 50 */
+  --color-bg-brand-solid:    var(--brand-700);  /* primary button. NOT 500. */
+  --color-bg-brand-hover:    var(--brand-800);
+
+  --color-bg-accent-subtle:  var(--accent-50);
+  --color-bg-accent-muted:   var(--accent-100);
+  --color-bg-accent-solid:   var(--accent-700);  /* secondary button */
+  --color-bg-accent-hover:   var(--accent-800);
+
+  --color-bg-success-subtle: var(--success-50);
+  --color-bg-warning-subtle: var(--warning-50);
+  --color-bg-error-subtle:   var(--error-50);
+
+  /* ------------------------------------------------------------------
+     BORDERS
+     Three weights, matching Spectrum's decorative / field / control split.
+     ------------------------------------------------------------------ */
+  --color-border-subtle:     var(--gray-200);   /* dividers, card outlines */
+  --color-border-default:    var(--gray-300);   /* inputs, selects, textareas */
+  --color-border-strong:     var(--gray-400);   /* checkbox, radio, switch */
+  --color-border-brand:      var(--brand-500);
+  --color-border-accent:     var(--accent-500);
+  --color-border-error:      var(--error-600);
+  --color-border-focus:      var(--brand-600);  /* see FOCUS RING note below */
+
+  /* ------------------------------------------------------------------
+     ICONS AND GLYPHS
+     Non text graphics need 3:1, not 4.5:1, so these can sit one step
+     lighter than the matching text role.
+     ------------------------------------------------------------------ */
+  --color-fg-primary:        var(--gray-700);
+  --color-fg-secondary:      var(--gray-600);
+  --color-fg-brand:          var(--brand-600);
+  --color-fg-accent:         var(--accent-600);
+  --color-fg-disabled:       var(--gray-400);
+  --color-fg-rating:         var(--warning-400);  /* star ratings — gold is
+                                the meaning here, same as identity. Does not
+                                theme and does not scale. */
+
+  /* ------------------------------------------------------------------
+     DECORATIVE ONLY — never carries information on its own
+     Chart series, illustration fills, accent shapes, skeleton blocks.
+     ------------------------------------------------------------------ */
+  --color-decorative-1:      var(--brand-300);
+  --color-decorative-2:      var(--brand-400);
+  --color-decorative-3:      var(--brand-200);
+
+  /* ------------------------------------------------------------------
+     IDENTITY — not a UI role
+     The swatch you name when someone asks what green this brand is.
+     Logo, brand references, large solid shapes. Do not use it for text
+     or for anything that needs a contrast guarantee.
+     ------------------------------------------------------------------ */
+  --color-brand-identity:    var(--brand-500);
+
+  /* ------------------------------------------------------------------
+     OVERLAY — for use over images, video, and unknown backgrounds
+     Alpha values, so they hold up on any photo. Use the white set over
+     imagery under 50% lightness, the black set over imagery above it.
+     ------------------------------------------------------------------ */
+  --color-overlay-scrim:     rgba(0, 0, 0, 0.50);
+  --color-overlay-scrim-soft:rgba(0, 0, 0, 0.28);
+  --color-overlay-text:      rgba(255, 255, 255, 0.96);
+  --color-overlay-fg:        rgba(255, 255, 255, 0.78);
+  --color-overlay-border:    rgba(255, 255, 255, 0.40);
+  --color-overlay-fill:      rgba(255, 255, 255, 0.16);
+}
+
+/* ============================================================================
+   DARK THEME
+   Roles flip, they do not shift. Text moves to the light end of the ramp and
+   surfaces move to the dark end. The 700 that carries your button in light
+   mode disappears against a 950 background, so the solid fill moves to 400
+   and takes dark text instead of white.
+
+   Swap the selector to .dark if that is what your Next.js theme provider sets.
+   ============================================================================ */
+
+[data-theme="dark"] {
+  --color-text-primary:      var(--gray-50);
+  --color-text-secondary:    var(--gray-300);
+  --color-text-tertiary:     var(--gray-400);
+  --color-text-disabled:     var(--gray-600);
+  --color-text-brand:        var(--brand-300);
+  --color-text-error:        var(--error-400);
+  --color-text-success:      var(--success-400);
+  --color-text-warning:      var(--warning-400);
+  --color-text-on-solid:     var(--gray-950);   /* dark text on a light fill */
+  --color-text-accent:       var(--accent-300);
+
+  --color-bg-primary:        var(--gray-950);
+  --color-bg-secondary:      var(--gray-900);
+  --color-bg-tertiary:       var(--gray-800);
+  --color-bg-disabled:       var(--gray-800);
+
+  --color-bg-brand-subtle:   var(--brand-950);
+  --color-bg-brand-muted:    var(--brand-900);
+  --color-bg-brand-solid:    var(--brand-400);
+  --color-bg-brand-hover:    var(--brand-300);
+
+  --color-bg-accent-subtle:  var(--accent-950);
+  --color-bg-accent-muted:   var(--accent-900);
+  --color-bg-accent-solid:   var(--accent-400);
+  --color-bg-accent-hover:   var(--accent-300);
+
+  --color-bg-success-subtle: var(--success-950);
+  --color-bg-warning-subtle: var(--warning-950);
+  --color-bg-error-subtle:   var(--error-950);
+
+  --color-border-subtle:     var(--gray-800);
+  --color-border-default:    var(--gray-700);
+  --color-border-strong:     var(--gray-600);
+  --color-border-brand:      var(--brand-400);
+  --color-border-accent:     var(--accent-400);
+  --color-border-error:      var(--error-400);
+  --color-border-focus:      var(--brand-400);
+
+  --color-fg-primary:        var(--gray-300);
+  --color-fg-secondary:      var(--gray-400);
+  --color-fg-brand:          var(--brand-400);
+  --color-fg-accent:         var(--accent-400);
+  --color-fg-disabled:       var(--gray-600);
+  --color-fg-rating:         var(--warning-400);  /* identical in both themes */
+
+  --color-decorative-1:      var(--brand-500);
+  --color-decorative-2:      var(--brand-600);
+  --color-decorative-3:      var(--brand-700);
+
+  /* Identity stays put. Yellow has to stay yellow. */
+  --color-brand-identity:    var(--brand-500);
+
+  /* Overlays are already alpha based, so they carry over unchanged. */
+}
+
+/* ============================================================================
+   THREE RULES THIS MAP ENCODES
+
+   1. PRESSED STATES ARE NOT A COLOR.
+      Lightness across 700, 800, 900 runs roughly 27%, 23%, 20%, so those three
+      read as one shade side by side. There is no third step available for a
+      default, hover, pressed sequence. Use --color-bg-brand-solid for default,
+      --color-bg-brand-hover for hover, then handle pressed with a treatment:
+
+        .btn:active { filter: brightness(0.92); transform: translateY(1px); }
+
+      Same effect, no phantom token, works on every hue in the system.
+
+   2. THE IDENTITY SWATCH AND THE BUTTON COLOR ARE DIFFERENT VALUES.
+      500 is a lightness slot, not a contrast slot. White on a 500 anchored
+      brand lands near 3:1, which fails AA for body text and passes only for
+      large bold. --color-brand-identity and --color-bg-brand-solid are
+      deliberately separate for that reason. If a client insists the button
+      match the logo exactly, re anchor their brand hex at 600 or 700 in the
+      primitives file rather than pointing this token at 500.
+
+   3. FOCUS RINGS NEED 3:1 AGAINST WHAT IS BEHIND THEM.
+      A 300 step focus ring is a common recommendation and it fails on white.
+      --color-border-focus is set to 600 for that reason. Pair it with an
+      offset so the ring never sits directly on the control edge:
+
+        :focus-visible { outline: 2px solid var(--color-border-focus);
+                         outline-offset: 2px; }
+
+   4. NEVER PLACE BRAND AND ACCENT ADJACENT AT FULL SATURATION.
+      Apple sits at hue 111, violet eggplant at 298. That is 187 degrees, so
+      they are near exact complements. Complements at high saturation vibrate
+      along their shared edge. The safe pattern is to separate them with a
+      neutral surface, or to pair a solid step of one against a subtle step of
+      the other. Do not put --color-bg-brand-solid next to
+      --color-bg-accent-solid with no gap.
+
+   ============================================================================
+   TAILWIND HOOKUP
+   If the library is on Tailwind v4, expose these through @theme inline so the
+   utilities resolve to the semantic layer rather than the primitives:
+
+     @theme inline {
+       --color-text-primary: var(--color-text-primary);
+       --color-bg-brand-solid: var(--color-bg-brand-solid);
+     }
+
+   Verify against your existing _template.css before wiring, since the exact
+   bridge depends on how your primitives are currently declared.
+   ============================================================================ */
+
+/* ####################  _type-primitives.css  #################### */
+
+/* ============================================================================
+   TYPE PRIMITIVES — Layer 1
+   ----------------------------------------------------------------------------
+   The Untitled UI scale, verbatim. Raw values only, no roles, no decisions.
+   Nothing in a component should reference these directly — use _type-roles.css.
+
+   PER CLIENT SWAP: the two family slots at the top. Same pattern as the two
+   brand hexes in _brand-auto.css.
+
+   GRID NOTE: only three of the eleven line heights land on 8 (72, 32, 24).
+   Seven land on 4. All eleven land on 2. This scale runs a 4pt baseline for
+   type internals while 8pt governs layout spacing. See _type-roles.css.
+   ============================================================================ */
+
+:root {
+  /* Client: Little River Landing, applied 2026-08-26 */
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body:    'Spectral', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* ---------------- WEIGHTS ---------------- */
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  /* ---------------- SIZES ---------------- */
+  --fs-display-2xl: 4.5rem;    /* 72px */
+  --fs-display-xl:  3.75rem;   /* 60px */
+  --fs-display-lg:  3rem;      /* 48px */
+  --fs-display-md:  2.25rem;   /* 36px */
+  --fs-display-sm:  1.875rem;  /* 30px */
+  --fs-display-xs:  1.5rem;    /* 24px */
+  --fs-text-xl:     1.25rem;   /* 20px */
+  --fs-text-lg:     1.125rem;  /* 18px */
+  --fs-text-md:     1rem;      /* 16px */
+  --fs-text-sm:     0.875rem;  /* 14px */
+  --fs-text-xs:     0.75rem;   /* 12px */
+
+  /* ---------------- LINE HEIGHTS ---------------- */
+  /* Absolute, not unitless. Paired to a specific size — if you change a size
+     you must change its line height, they are not independent. */
+  --lh-display-2xl: 5.625rem;  /* 90px */
+  --lh-display-xl:  4.5rem;    /* 72px */
+  --lh-display-lg:  3.75rem;   /* 60px */
+  --lh-display-md:  2.75rem;   /* 44px */
+  --lh-display-sm:  2.375rem;  /* 38px */
+  --lh-display-xs:  2rem;      /* 32px */
+  --lh-text-xl:     1.875rem;  /* 30px */
+  --lh-text-lg:     1.75rem;   /* 28px */
+  --lh-text-md:     1.5rem;    /* 24px */
+  --lh-text-sm:     1.25rem;   /* 20px */
+  --lh-text-xs:     1.125rem;  /* 18px */
+
+  /* ---------------- TRACKING ---------------- */
+  /* The spec writes -2%. That is not valid CSS; letter-spacing does not take
+     percentages. -0.02em is the same thing and does work.
+     Tight applies to the four largest Display sizes only. Everything from
+     Display sm down runs at 0. */
+  --ls-tight:  -0.02em;
+  --ls-normal: 0;
+  --ls-wide:   0.06em;   /* uppercase eyebrows only, never lowercase text */
+  --ls-wider:  0.2em;    /* the editorial rule-and-label eyebrow only. Wide
+                            enough that the label reads as a graphic mark
+                            rather than a word, which only works on a short
+                            uppercase string — never on more than a few words. */
+}
+
+/* ####################  _type-roles.css  #################### */
+
+/* ============================================================================
+   TYPE ROLES — Layer 2
+   ----------------------------------------------------------------------------
+   Jobs, not sizes. A component asks for .type-section-title, never
+   .text-display-md. Change what a section title means once, here, and every
+   page follows.
+
+   Roles are classes rather than custom properties because a role sets four
+   properties at once and a custom property can only carry one value.
+
+   Load order: _type-primitives.css, then this file.
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   PAGE DEFAULT
+--------------------------------------------------------------------------- */
+body {
+  font-family: var(--font-body);
+  font-size: var(--fs-text-md);
+  line-height: var(--lh-text-md);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------------------------------------------------------------------------
+   ROLES
+--------------------------------------------------------------------------- */
+
+/* Hero headline. One per page. */
+.type-hero {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-2xl);
+  line-height: var(--lh-display-2xl);
+  letter-spacing: var(--ls-tight);
+  font-weight: var(--fw-semibold);
+}
+
+/* Sits under the hero headline. Body family on purpose — a serif subhead
+   under a serif headline reads as one undifferentiated block. */
+.type-lead {
+  font-family: var(--font-body);
+  font-size: var(--fs-text-xl);
+  line-height: var(--lh-text-xl);
+  letter-spacing: var(--ls-normal);
+  font-weight: var(--fw-regular);
+}
+
+/* Top of a major page section. */
+.type-section-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-md);
+  line-height: var(--lh-display-md);
+  letter-spacing: var(--ls-tight);
+  font-weight: var(--fw-semibold);
+}
+
+/* A heading inside a section. */
+.type-subsection-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-xs);
+  line-height: var(--lh-display-xs);
+  letter-spacing: var(--ls-normal);
+  font-weight: var(--fw-semibold);
+}
+
+/* Card, tile, feature, and list item headings. */
+.type-card-title {
+  font-family: var(--font-body);
+  font-size: var(--fs-text-xl);
+  line-height: var(--lh-text-xl);
+  letter-spacing: var(--ls-normal);
+  font-weight: var(--fw-semibold);
+}
+
+/* Default paragraph. */
+.type-body {
+  font-family: var(--font-body);
+  font-size: var(--fs-text-md);
+  line-height: var(--lh-text-md);
+  letter-spacing: var(--ls-normal);
+  font-weight: var(--fw-regular);
+}
+
+/* Paragraph in a section that needs more presence. */
+.type-body-lg {
+  font-family: var(--font-body);
+  font-size: var(--fs-text-lg);
+  line-height: var(--lh-text-lg);
+  letter-spacing: var(--ls-normal);
+  font-weight: var(--fw-regular);
+}
+
+/* Small print, image captions, form helper text, legal. */
+.type-caption {
+  font-family: var(--font-body);
+  font-size: var(--fs-text-sm);
+  line-height: var(--lh-text-sm);
+  letter-spacing: var(--ls-normal);
+  font-weight: var(--fw-regular);
+}
+
+/* The small label above a section title. Uppercase needs positive tracking;
+   without it the letters collide. Never apply this class to lowercase text. */
+.type-eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--fs-text-sm);
+  line-height: var(--lh-text-sm);
+  letter-spacing: var(--ls-wide);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+}
+
+/* The editorial variant of the eyebrow: same size, wider tracking, one weight
+   lighter. Pairs with a hairline rule to its left. Uppercase only, and short —
+   at this tracking a long label falls apart. */
+.type-eyebrow-wide {
+  font-family: var(--font-body);
+  font-size: var(--fs-text-sm);
+  line-height: var(--lh-text-sm);
+  letter-spacing: var(--ls-wider);
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+}
+
+/* Buttons and links that look like buttons. */
+.type-button {
+  font-family: var(--font-body);
+  font-size: var(--fs-text-md);
+  line-height: var(--lh-text-md);
+  letter-spacing: var(--ls-normal);
+  font-weight: var(--fw-semibold);
+}
+
+/* A code shown as content: a discount code, a booking reference, a
+   confirmation number. Its own role for the same reason .type-button-caps is
+   one — it is uppercase and needs positive tracking, and tracking may only be
+   set in this layer.
+
+   Display family and lining numerals. The Georgia fallback inside
+   --font-display has OLDSTYLE numerals, which would render WELCOM10 with an
+   x-height 1 and 0 — a code that reads wrong is a code that gets typed wrong,
+   so this does not get to depend on the webfont arriving. */
+.type-code {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-xs);
+  line-height: var(--lh-display-xs);
+  letter-spacing: var(--ls-wide);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: lining-nums;
+  text-transform: uppercase;
+}
+
+/* Uppercase button. Separate role rather than a component override, because
+   uppercase needs positive tracking and tracking may only be set in this
+   layer. */
+.type-button-caps {
+  font-family: var(--font-body);
+  font-size: var(--fs-text-sm);
+  line-height: var(--lh-text-sm);
+  letter-spacing: var(--ls-wide);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------------
+   WEIGHT OVERRIDES
+   The scale crosses four weights, which would be forty four classes if they
+   were enumerated. Compose instead: class="type-card-title fw-bold"
+--------------------------------------------------------------------------- */
+.fw-regular  { font-weight: var(--fw-regular); }
+.fw-medium   { font-weight: var(--fw-medium); }
+.fw-semibold { font-weight: var(--fw-semibold); }
+.fw-bold     { font-weight: var(--fw-bold); }
+
+/* ---------------------------------------------------------------------------
+   HEADLINE BALANCE
+   Stops a two line headline leaving one orphan word on line two. Ignored by
+   browsers that do not support it, so it needs no fallback.
+--------------------------------------------------------------------------- */
+.type-hero,
+.type-section-title,
+.type-subsection-title,
+.type-card-title {
+  text-wrap: balance;
+}
+
+/* ---------------------------------------------------------------------------
+   MOBILE
+   Display 2xl is 72px. On a 375px viewport that is roughly five characters
+   per line, so the four Display roles step down. Each moves exactly two rungs
+   down the same scale — no new values are introduced, and every size on the
+   page is still a size the design system defines.
+
+     hero              72/90  ->  48/60
+     section title     36/44  ->  24/32
+     subsection title  24/32  ->  20/30
+     card title        20/30  ->  18/28
+
+   Text roles do not move. Sixteen pixel body copy is sixteen pixels
+   everywhere; shrinking it on mobile is the wrong instinct.
+--------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  .type-hero {
+    font-size: var(--fs-display-lg);
+    line-height: var(--lh-display-lg);
+  }
+  .type-section-title {
+    font-size: var(--fs-display-xs);
+    line-height: var(--lh-display-xs);
+  }
+  .type-subsection-title {
+    font-size: var(--fs-text-xl);
+    line-height: var(--lh-text-xl);
+  }
+  .type-card-title {
+    font-size: var(--fs-text-lg);
+    line-height: var(--lh-text-lg);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   THE GRID RECONCILIATION — read this before auditing spacing
+
+   Only three of the eleven line heights are multiples of 8. All eleven are
+   multiples of 2, and seven are multiples of 4. So this scale cannot sit on a
+   strict 8px baseline grid, and forcing it there would mean rewriting the
+   line heights and abandoning the Untitled UI scale.
+
+   The split that works:
+     - 8pt governs SPACING. Margins, padding, gaps, section rhythm. All
+       multiples of 8, no exceptions.
+     - 4pt governs TYPE INTERNALS. Line height is a property of the type
+       ramp, not of the layout grid.
+
+   Practically: never set a margin that is not a multiple of 8, and stop
+   expecting text blocks to snap to a baseline. They will not, and no
+   production design system built on this scale does.
+--------------------------------------------------------------------------- */
