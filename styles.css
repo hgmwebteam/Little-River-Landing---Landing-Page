@@ -2229,21 +2229,11 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* margin-top: auto pins the guest to the bottom edge, so a short
-   quote and a long one still line their avatars up across the
+   quote and a long one still line their names up across the
    rail. Without it a two line review floats its name halfway up
    the card and the row looks broken. */
 .review__body  { color: var(--color-text-secondary); margin-bottom: var(--space-4); }
-.review__guest { display: flex; align-items: center; gap: var(--space-3); margin-top: auto; }
-
-/* 56px. An object dimension, not spacing — the same exemption
-   the icon boxes and the field heights take. */
-.review__avatar {
-  flex: 0 0 auto;
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 50%;
-  object-fit: cover;
-}
+.review__guest { margin-top: auto; }
 .review__when { color: var(--color-text-secondary); }
 .review__unit { color: var(--color-text-secondary); }
 
