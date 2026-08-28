@@ -166,18 +166,35 @@
      next one and moves the highlight down the list. Nothing on
      screen moves except the deck and the highlight.
 
+     Each amenity wears a display-size numeral down its left side
+     and the lit one opens its description under its name. THE
+     WHOLE ROW IS PRESSABLE and goes to that amenity, as are the
+     dots on the right of the deck. The
+     numeral's size is doing structural work as well as visual —
+     it sets the height of a closed step, so the description
+     unfolds into room that was already there and the pinned
+     column barely settles. Four dots down the right of the deck
+     say how many there are and which one is up.
+
      MOBILE: one column, no pin, no deck. Each amenity carries its
      own photograph directly above its own name, which says the
      same thing by adjacency and costs a phone none of the scroll
      distance the track needs.
 
-     THREE THINGS HAVE TO BE KEPT IN STEP BY HAND:
-       · data-step on each <li> and on each .process__card. These
-         are what pair an amenity with its photograph, and they
-         pair by number and not by position.
+     FOUR THINGS HAVE TO BE KEPT IN STEP BY HAND:
+       · data-step on each <li>, on each .process__card and on each
+         .process__dot. These are what pair an amenity with its
+         photograph and its dot, and they pair by number and not by
+         position.
        · The DOM order of the cards IS the stacking order of the
          deck, front to back. It has to match the reading order of
          the list.
+       · One dot per amenity in .process__dots, carrying that
+         amenity's data-step AND an aria-labelledby pointing at its
+         heading id. Nothing derives the count from the list, so a
+         missing dot is a rail that quietly understates how much is
+         left, and a wrong aria-labelledby is a jump button that
+         announces the wrong amenity.
        · --process-count in styles.css, which sets the length of
          the scroll track. script.js corrects it from the real
          count on load, so this only governs the first paint — but
@@ -185,6 +202,11 @@
 
      The numbers themselves are drawn by CSS, not typed, so adding
      or deleting an <li> renumbers the rest on its own.
+
+     THE LEFT COLUMN CANNOT BE SCROLLED on desktop — it is pinned,
+     one screen tall — so anything added to it has to fit. See the
+     height gate in styles.css and re-measure it if you touch the
+     intro, the titles or the descriptions.
 
      Photos are portrait, cropped to the deck's frame — see the
      README before dropping new ones in.
@@ -203,9 +225,9 @@
        the accessibility tree; the photos it duplicates are already
        in the DOM below, so this costs no extra download. -->
   <div class="process__backdrop" data-process-backdrop aria-hidden="true">
-    <img class="process__backdrop-img" src="assets/img/amenity-1.webp" alt="" data-step="0">
-    <img class="process__backdrop-img" src="assets/img/amenity-4.webp" alt="" data-step="1">
-    <img class="process__backdrop-img" src="assets/img/amenity-2.webp" alt="" data-step="2">
+    <img class="process__backdrop-img" src="assets/img/amenity-2.webp" alt="" data-step="0">
+    <img class="process__backdrop-img" src="assets/img/amenity-1.webp" alt="" data-step="1">
+    <img class="process__backdrop-img" src="assets/img/amenity-4.webp" alt="" data-step="2">
     <img class="process__backdrop-img" src="assets/img/amenity-3.webp" alt="" data-step="3">
   </div>
 
@@ -253,23 +275,95 @@
              beside it. Same four files, so nothing extra
              downloads, and alt stays empty because the title is
              right under it. -->
-        <img class="process__step-photo" src="assets/img/amenity-1.webp" alt="">
-        <h3 class="process__title type-subsection-title fw-regular">Hull &amp; Hearth Restaurant</h3>
+        <img class="process__step-photo" src="assets/img/amenity-2.webp" alt="">
+
+        <!-- THE TAP TARGET, phone only — the whole photograph, not a
+             chevron in a corner of it. It fills the photo's grid
+             cell and nothing else, so the gesture is the one the
+             picture already invites.
+
+             A real <button> rather than a tap handler on the <li>,
+             so it is reachable by keyboard and announced as a
+             control. It carries no text of its own: aria-labelledby
+             borrows the heading beside it, which is the name a
+             screen reader wants anyway, and aria-expanded says what
+             state the thing named in aria-controls is in.
+
+             ABOVE 1024px THE SAME BUTTON IS THE WHOLE ROW — the
+             numeral and the name — and pressing it goes to that
+             amenity: it scrolls the page to where that amenity
+             comes up, and the description opens there because it
+             is the one you are now on. One control per amenity at
+             both widths and one meaning at both, "press this
+             amenity"; only what it costs to get there differs.
+             script.js carries the branch, and styles.css moves the
+             button off the photograph and onto the row. -->
+        <button class="process__toggle" type="button"
+                aria-expanded="false"
+                aria-labelledby="amenity-0-title"
+                aria-controls="amenity-0-desc"></button>
+
+        <!-- Title and description in one box, so the scrim behind
+             them is one box too: closed it is a band under the
+             name, open it grows upward to carry the line as well.
+             The box is anchored to the foot of a photograph whose
+             height is fixed by aspect-ratio, so growing it moves
+             nothing else on the page — it only eats into the
+             picture, which is what the darkening is for. -->
+        <div class="process__caption">
+          <h3 class="process__title type-subsection-title fw-regular" id="amenity-0-title">Lodging</h3>
+          <div class="process__desc" id="amenity-0-desc">
+            <p class="process__desc-text type-body">29 lakeside rooms. Port, Starboard, Topside. The water right outside.</p>
+          </div>
+        </div>
       </li>
 
       <li class="process__step" data-step="1">
-        <img class="process__step-photo" src="assets/img/amenity-4.webp" alt="">
-        <h3 class="process__title type-subsection-title fw-regular">Water Amenities</h3>
+        <img class="process__step-photo" src="assets/img/amenity-1.webp" alt="">
+
+        <button class="process__toggle" type="button"
+                aria-expanded="false"
+                aria-labelledby="amenity-1-title"
+                aria-controls="amenity-1-desc"></button>
+
+        <div class="process__caption">
+          <h3 class="process__title type-subsection-title fw-regular" id="amenity-1-title">Hull &amp; Hearth Restaurant</h3>
+          <div class="process__desc" id="amenity-1-desc">
+            <p class="process__desc-text type-body">Wood-fired Southern cooking, oysters, and a deck built for sunset.</p>
+          </div>
+        </div>
       </li>
 
       <li class="process__step" data-step="2">
-        <img class="process__step-photo" src="assets/img/amenity-2.webp" alt="">
-        <h3 class="process__title type-subsection-title fw-regular">Lodging</h3>
+        <img class="process__step-photo" src="assets/img/amenity-4.webp" alt="">
+
+        <button class="process__toggle" type="button"
+                aria-expanded="false"
+                aria-labelledby="amenity-2-title"
+                aria-controls="amenity-2-desc"></button>
+
+        <div class="process__caption">
+          <h3 class="process__title type-subsection-title fw-regular" id="amenity-2-title">Water Amenities</h3>
+          <div class="process__desc" id="amenity-2-desc">
+            <p class="process__desc-text type-body">One of two fuel docks on the lake. Pontoons, jet skis, kayaks, eFoils.</p>
+          </div>
+        </div>
       </li>
 
       <li class="process__step" data-step="3">
         <img class="process__step-photo" src="assets/img/amenity-3.webp" alt="">
-        <h3 class="process__title type-subsection-title fw-regular">On-Site Store</h3>
+
+        <button class="process__toggle" type="button"
+                aria-expanded="false"
+                aria-labelledby="amenity-3-title"
+                aria-controls="amenity-3-desc"></button>
+
+        <div class="process__caption">
+          <h3 class="process__title type-subsection-title fw-regular" id="amenity-3-title">Ship&rsquo;s Store</h3>
+          <div class="process__desc" id="amenity-3-desc">
+            <p class="process__desc-text type-body">Bait, tackle, parts, snacks. Everything the day needs.</p>
+          </div>
+        </div>
       </li>
 
     </ol>
@@ -318,29 +412,62 @@
          DOM order is also the stacking order. -->
     <div class="process__media" data-process-media data-reveal="fade">
       <div class="process__card" data-step="0">
-        <img class="process__photo" src="assets/img/amenity-1.webp" alt="">
+        <img class="process__photo" src="assets/img/amenity-2.webp" alt="">
       </div>
       <div class="process__card" data-step="1">
-        <img class="process__photo" src="assets/img/amenity-4.webp" alt="">
+        <img class="process__photo" src="assets/img/amenity-1.webp" alt="">
       </div>
       <div class="process__card" data-step="2">
-        <img class="process__photo" src="assets/img/amenity-2.webp" alt="">
+        <img class="process__photo" src="assets/img/amenity-4.webp" alt="">
       </div>
       <div class="process__card" data-step="3">
         <img class="process__photo" src="assets/img/amenity-3.webp" alt="">
+      </div>
+
+      <!-- THE DOTS. A rail down the right of the deck saying how many
+           amenities there are and which one is up — the same thing
+           the lit title and the depth of the stack say, in the one
+           form that can be taken in without reading anything — and
+           now also the way to jump to one.
+
+           REAL <button>s, because they are real controls: clicking
+           one scrolls the page to that amenity's place in the track,
+           which is the only way to reach a specific amenity in a
+           section that is otherwise driven by scroll position alone.
+           That is also why they are not aria-hidden. Four buttons
+           named the same as the four list items is not the list read
+           twice — the list is text and these are a jump control, and
+           a screen reader user gets the same shortcut a mouse user
+           does. aria-labelledby borrows each amenity's own heading
+           rather than repeating its name here, so the two can never
+           drift apart.
+
+           The rail is DISPLAY: NONE UNTIL SCRIPT.JS HAS RUN, which
+           is what keeps that honest. Without JavaScript there is no
+           highlight to indicate and no scrolling to do — the deck is
+           one flat photograph — so four buttons that light nothing
+           and go nowhere would be worse than no rail at all.
+
+           data-step pairs a dot with its amenity the same way the
+           cards do, by number rather than by position. -->
+      <div class="process__dots" data-process-dots>
+        <button class="process__dot" type="button" data-step="0" aria-labelledby="amenity-0-title"></button>
+        <button class="process__dot" type="button" data-step="1" aria-labelledby="amenity-1-title"></button>
+        <button class="process__dot" type="button" data-step="2" aria-labelledby="amenity-2-title"></button>
+        <button class="process__dot" type="button" data-step="3" aria-labelledby="amenity-3-title"></button>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ============================================================
-     6 · LOCAL FAVOURITES  —  the amenity card, made clickable
+     6 · LOCAL FAVORITES  —  the amenity card, made clickable
      Same card as section 5 and deliberately so: photo as the whole
      card, name over the top left, a line about the place in a
      panel across the bottom, and the same accordion on desktop.
 
      The one difference is the tag. An amenity is a <figure>
-     because it goes nowhere; a favourite is an <a> because it
+     because it goes nowhere; a favorite is an <a> because it
      opens the place's page. That is also why the caption is a
      <span> here rather than a <figcaption> — <figcaption> is only
      valid inside a <figure>, and the styling never depended on
@@ -356,7 +483,7 @@
 <section class="section" id="local">
   <div class="container center" data-reveal-group>
     <p class="eyebrow type-eyebrow">NEARBY ATTRACTIONS</p>
-    <h2 class="heading type-section-title">Local Favourites</h2>
+    <h2 class="heading type-section-title">Local Favorites</h2>
     <p class="subhead type-body-lg">Canyon waterfalls, mountaintop boulders and a waterpark, all within a short drive of the dock.</p>
   </div>
 
@@ -383,7 +510,7 @@
         </span>
       </a>
 
-      <a class="tall-card" href="https://www.greatescapesrvresorts.com/pirates-bay-waterpark/park-info/contact" target="_blank" rel="noopener">
+      <a class="tall-card" href="https://www.greatescapesrvresorts.com/pirates-bay-waterpark?_gl=1*1mfipbo*_up*MQ..*_ga*MTk3MDc3MjczNy4xNzg3ODQ0MjU5*_ga_6VXVLF3PR3*czE3ODc4NDQyNTkkbzEkZzAkdDE3ODc4NDQyNTkkajYwJGwwJGgw*_ga_YKS8LK5TD0*czE3ODc4NDQyNTkkbzEkZzAkdDE3ODc4NDQyNTkkajYwJGwwJGg0Mzk4NzcyNzM" target="_blank" rel="noopener">
         <img class="tall-card__img" src="assets/img/favorite-3.webp" alt="">
         <span class="tall-card__caption">
           <span class="tall-card__title type-card-title">Pirate&rsquo;s Bay Waterpark</span>

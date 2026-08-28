@@ -326,6 +326,19 @@
     var back  = document.querySelector('[data-process-backdrop]');
     var washes = back ? back.querySelectorAll('.process__backdrop-img') : [];
 
+    // The dot rail beside the deck. Optional in the same way the wash
+    // is: the section reads without it, so everything below guards on
+    // it rather than assuming it is in the markup.
+    var rail = document.querySelector('[data-process-dots]');
+    var dots = rail ? rail.querySelectorAll('.process__dot') : [];
+
+    /* THE SAME QUERY THE PINNED LAYOUT IS GATED ON IN styles.css.
+       Declared up here rather than down beside the driver it
+       belongs to, because show() runs once during setup below and
+       has to know which layout it is in before that driver exists.
+       The note on why the query is what it is, is at the driver. */
+    var wide = window.matchMedia('(min-width: 1024px) and (min-height: 720px)');
+
     if (!steps.length) return;
 
     // The step showing right now. readProgress runs every frame of
@@ -377,12 +390,99 @@
       washes.forEach(function (img) {
         img.classList.toggle('is-active', img.getAttribute('data-step') === want);
       });
+
+      // Paired by data-step like everything else in here, so a dot
+      // follows its amenity rather than its place in the rail.
+      //
+      // aria-current as well as the class, because these are
+      // buttons now: the class is what the stylesheet lights up and
+      // aria-current is what says "this is the one you are on" to a
+      // reader who cannot see it lit. Removed rather than set to
+      // "false" on the others — aria-current="false" is a value the
+      // spec treats as absent but some readers still announce.
+      dots.forEach(function (dot) {
+        var on = dot.getAttribute('data-step') === want;
+        dot.classList.toggle('is-active', on);
+        if (on) dot.setAttribute('aria-current', 'true');
+        else    dot.removeAttribute('aria-current');
+      });
+
+      /* THE OPEN STATE IS SCROLL-DERIVED IN THE PINNED LAYOUT, so
+         it is written from here rather than from the click handler.
+         The description showing up there is the active step's, which
+         means the button reporting itself expanded has to be the
+         active step's too, whether the reader got there by pressing
+         it or by scrolling past it.
+
+         Gated on the breakpoint because on a phone this attribute
+         belongs to the tap handler — there the description opens
+         because it was tapped, not because it was scrolled to, and
+         show() writing it as well would fight the tap. */
+      if (wide.matches) {
+        steps.forEach(function (s) {
+          var t = s.querySelector('.process__toggle');
+          if (t) t.setAttribute('aria-expanded', s === step ? 'true' : 'false');
+        });
+      }
     }
 
     list.classList.add('is-enhanced');
     if (frame) frame.classList.add('is-enhanced');
     if (back)  back.classList.add('is-enhanced');
+    if (rail)  rail.classList.add('is-enhanced');
     show(steps[0]);
+
+    /* --- PRESS AN AMENITY -----------------------------------
+       ONE BUTTON PER AMENITY, TWO LAYOUTS, ONE MEANING: press this
+       amenity and it becomes the one you are reading. What that
+       takes is different at the two widths, which is the branch
+       below and the only thing in here that is.
+
+       PHONE — the button is the photograph, and pressing it opens
+       the description under the name. One open at a time: four
+       open descriptions is four darkened photographs and the
+       section stops being a run of pictures, which is the thing
+       the overlay was introduced to protect. Pressing a second
+       amenity closes the first; pressing the open one closes it.
+
+       PINNED — the button is the whole row, numeral and name, and
+       pressing it scrolls the page to where that amenity comes up.
+       It CANNOT just set the class: up here .is-active is a pure
+       function of scroll position, recomputed on the next frame of
+       the next scroll, so anything written directly would be
+       overwritten within a frame of the reader touching the wheel.
+       Moving the page is the only thing that lasts, and the driver
+       lights the step on the way. Which also means the open state
+       is not this handler's to manage up there — show() owns it,
+       including the aria below.
+
+       The class goes on the <li> and aria-expanded goes on the
+       button, and both are written from the same place so they
+       cannot drift — the class is what the stylesheet reads and
+       the attribute is what a screen reader reads, and a state
+       that is only in one of them is a bug in the other.
+    ------------------------------------------------------- */
+    steps.forEach(function (step) {
+      var toggle = step.querySelector('.process__toggle');
+      if (!toggle) return;
+
+      toggle.addEventListener('click', function () {
+        if (wide.matches) { goToStep(step); return; }
+
+        var open = !step.classList.contains('is-open');
+
+        steps.forEach(function (s) {
+          var t = s.querySelector('.process__toggle');
+          s.classList.remove('is-open');
+          if (t) t.setAttribute('aria-expanded', 'false');
+        });
+
+        if (open) {
+          step.classList.add('is-open');
+          toggle.setAttribute('aria-expanded', 'true');
+        }
+      });
+    });
 
     /* --- WHICH STEP IS ACTIVE -------------------------------
        Two drivers, because there are two layouts and they
@@ -410,11 +510,17 @@
 
     /* THE SAME QUERY THE PINNED LAYOUT IS GATED ON IN styles.css,
        and it has to stay the same. The height half is not padding:
-       under 680px of window the stylesheet drops the pin and puts
+       under 720px of window the stylesheet drops the pin and puts
        the section back into its one-column form, and a progress
        driver pointed at a section that is not pinned lights the
-       wrong amenity. See the note above the pinned block there. */
-    var wide = window.matchMedia('(min-width: 1024px) and (min-height: 680px)');
+       wrong amenity. See the note above the pinned block there.
+
+       720 and not 680 since the intro was capped at 430px and went
+       back to five lines — the note in styles.css carries the
+       re-measured numbers.
+
+       `wide` itself is declared at the top of this block; see the
+       note there for why it could not live here. */
     var watcher = null;
     var ticking = false;
 
@@ -468,6 +574,16 @@
       if (watcher) { watcher.disconnect(); watcher = null; }
 
       if (wide.matches && section) {
+        /* A description opened by a tap before the window was
+           widened is still open up here, possibly on a step that is
+           not the active one — and the pinned layout has no way to
+           close it, because the thing it was opened with is the
+           photograph and the photograph is gone. Clear it and let
+           show() re-assert, since at this width show() is what owns
+           the open state. */
+        steps.forEach(function (s) { s.classList.remove('is-open'); });
+        if (current) show(current);
+
         window.addEventListener('scroll', onScroll, { passive: true });
         readProgress();
         return;
@@ -483,6 +599,75 @@
     }
 
     bind();
+
+    /* --- GO TO AN AMENITY -----------------------------------
+       Shared by the two things that can ask for it: the amenity's
+       own row, and its dot in the rail beside the deck. It takes
+       any element carrying a data-step and finds the step of that
+       number, so neither caller needs to know its own position.
+
+       There is nothing to "select" here — show() is driven by
+       readProgress and would immediately overwrite anything set
+       directly — so the click does the one thing that lasts: it
+       moves the page to where that amenity is up, and the driver
+       lights it on the way.
+
+       THE ARITHMETIC IS readProgress' RUN BACKWARDS, which is why
+       it is worth reading the two together. That function takes
+       -rect.top over the travel to get p, then floor(p * n) for
+       the index; this takes an index and returns a scroll position
+       whose p lands in the MIDDLE of that index's slice —
+       (i + 0.5) / n. The middle and not the start on purpose: a
+       position on a slice boundary is one rounded pixel away from
+       lighting its neighbour, and half a slice of margin either
+       side is what makes the dot you pressed the dot that lights.
+
+       pageYOffset rather than a rect-only sum because scrollTo
+       wants a document coordinate and rect.top is a viewport one.
+
+       The wide.matches guard is NOT belt and braces for the row —
+       that button exists at both widths and does something else
+       entirely on a phone, so this has to refuse to run there. The
+       driver below the breakpoint is an IntersectionObserver over
+       steps that scroll normally, and this arithmetic is
+       meaningless against it. (For the dots it is belt and braces:
+       their rail is display: none down there.)
+
+       An explicit 'smooth' would win over the reduced motion rule
+       in _template.css, which only reaches the CSS scroll-behavior
+       property, so the check is here — the same one and for the
+       same reason as the review rail's arrows above. And it is a
+       feature test as well as a preference test: the options form
+       of scrollTo is ignored wholesale by a browser that does not
+       take it, which would leave the dots dead rather than abrupt. */
+    function goToStep(el) {
+      if (!section || !wide.matches) return;
+
+      var want = el.getAttribute('data-step');
+      var i = -1;
+      steps.forEach(function (step, n) {
+        if (step.getAttribute('data-step') === want) i = n;
+      });
+      if (i === -1) return;
+
+      var rect   = section.getBoundingClientRect();
+      var travel = rect.height - window.innerHeight;
+      if (travel <= 0) return;
+
+      var top = Math.round(
+        rect.top + window.pageYOffset + ((i + 0.5) / steps.length) * travel
+      );
+
+      if ('scrollBehavior' in document.documentElement.style) {
+        window.scrollTo({ top: top, behavior: stillMotion.matches ? 'auto' : 'smooth' });
+      } else {
+        window.scrollTo(0, top);
+      }
+    }
+
+    dots.forEach(function (dot) {
+      dot.addEventListener('click', function () { goToStep(dot); });
+    });
 
     /* addListener is the pre-2019 spelling and Safari needed it
        until 14. Cheap to keep, and the fallback for not having it

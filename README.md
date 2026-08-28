@@ -199,10 +199,47 @@ the right. Scrolling lifts the front card up and off to show the one behind
 it and moves the highlight down the list. Nothing on the screen moves
 except those two things.
 
+**Each amenity carries a large numeral down its left side**, and the one-line
+description **opens under the name of whichever amenity you are on** — the
+others stay closed. The numeral is what makes that affordable: it is tall
+enough that a closed step is already about as tall as an open one, so the
+line unfolds into space that was there anyway and the list barely settles.
+The description used to sit on the photograph instead; it does not any more,
+and **the photograph now carries no text at all**.
+
+**Clicking an amenity goes to it.** The whole row is the target — the numeral
+and the name, not just the words — and pressing one scrolls the page to where
+that amenity comes up. It cannot simply light the one you pressed: on a
+computer this section's state is purely a function of how far down it you
+are, so anything set directly would be overwritten the moment you touched the
+wheel. Moving the page is the thing that lasts. Hovering a row brings it
+partway up, which is what says it can be pressed at all.
+
+**Four dots run down the right of the photo**, one per amenity, with the one
+you are on lit and larger, and **clicking one does the same thing** — it is
+the same jump, offered next to the picture. Both are keyboard-reachable and
+both announce the amenity's name. The dot you see is 6px but the thing you
+are clicking is 40x24, so it is not the pinprick it looks like.
+
+The rail **does not appear at all if JavaScript has not run**. There would be
+no highlight to indicate and nothing for a click to do, so four dead dots
+would be worse than none.
+
 On a phone none of that happens. It is one column, nothing pins, and each
 amenity simply carries its own photograph directly above its own name —
 which says the same thing without spending a phone's scroll on it. The
 button goes full width at the bottom of the section.
+
+**On a phone the same button is the photograph**, and tapping it opens the
+description rather than scrolling anywhere — one control per amenity meaning
+"press this amenity" at both widths, doing whatever that width requires.
+
+**Tapping an amenity's photograph on a phone opens its description**, which
+unfolds under the name and dims the picture behind it without hiding it.
+Tapping it again closes it, and opening a second one closes the first —
+four open descriptions is four dimmed photographs and the section stops
+reading as a run of pictures. Nothing moves on the page when it opens: the
+text grows up into the photo, which is a fixed height.
 
 **The button is one element in the markup, not two.** The wrapper around
 the left-hand column dissolves on a phone, so the same tag is "under the
@@ -217,20 +254,54 @@ card, step 1 the second. If you add a fifth amenity, add `data-step="4"`
 to the new `<li>` **and** a fifth card with `data-step="4"`, or the new
 amenity will leave the previous photo on screen.
 
-**Three things have to be kept in step by hand when you add or remove an
+**The description is typed once**, in the `<li>` as
+`<p class="process__desc-text">`, and both layouts read that one copy — the
+phone opens it on a tap, the computer opens it on the amenity you are level
+with. It used to be typed a second time on the card and the two could drift
+apart; that copy is gone.
+
+**Four things have to be kept in step by hand when you add or remove an
 amenity:**
 
 1. The `data-step` numbers, as above.
 2. **The order of the cards in the markup is the order of the stack**, front
    to back. It has to match the order the amenities are listed in.
-3. `--process-count` in `styles.css` (search for it — it is in the pinned
+3. **A dot for the new amenity** in the `.process__dots` rail at the end of
+   `.process__media`, carrying the same `data-step` **and** an
+   `aria-labelledby` pointing at the new heading's id. Miss the dot and the
+   rail says there are four amenities when there are five; miss the
+   `aria-labelledby` and the jump button announces the wrong one.
+4. `--process-count` in `styles.css` (search for it — it is in the pinned
    amenities block), which sets how long the section is. `script.js` corrects
    it from the real count as soon as the page loads, so getting it wrong only
    affects the split second before that and anyone browsing without
    JavaScript — but keep it right anyway.
 
-The `01` `02` `03` numbers are drawn by CSS, not typed. Delete the middle
-amenity and the rest renumber themselves.
+A new `<li>` also carries three `amenity-N-…` ids that have to be unique and
+have to match each other: the heading's `id="amenity-4-title"`, the
+description's `id="amenity-4-desc"`, and the button's `aria-labelledby` and
+`aria-controls` pointing at those two. That is what tells a screen reader
+which name the tap target has and what it opens. Copying an existing block
+and forgetting to bump the number is the easy mistake — two elements with
+the same id, and the button announces the wrong amenity.
+
+The numbers are drawn by CSS, not typed. Delete the middle amenity and the
+rest renumber themselves. They read `01` `02` `03` on a phone, where they
+are small labels above each photograph, and `1` `2` `3` at display size in
+the margin on a computer.
+
+**A fifth amenity is the point at which to stop and think.** Every one added
+makes the section another screen taller on a computer, and the left column
+has about 18px of room left at the shortest window the pinned layout runs at
+— see the height-gate note in `styles.css`. A fifth will not fit there
+without something else giving.
+
+On a phone the amenity's name is laid over the foot of its own photograph
+behind a short gradient band, rather than sitting underneath it. The band
+is only as tall as the words — the picture stays a picture — and grows to
+about twice that while the description is open. Keep the bottom of the
+frame free of anything that matters, because that is where the name goes,
+and on a computer the description goes in the same place on the card.
 
 Amenity photos are **tall portrait** now — roughly 576 × 784, the same shape
 as a local favorite. That is a change back from the 4:3 landscape the section
@@ -277,9 +348,14 @@ times as the screen grows:
 
 On a computer that four-across row behaves as an accordion: mousing over
 a card widens it and its neighbours give up the room, and the
-description panel fades in as it does. On a phone there is no mouse to
-hover with, so the panel is simply always showing — nothing is hidden
-behind an interaction a phone cannot perform.
+description panel fades in as it does. On a phone the panel is not drawn
+at all — the cards read better as photographs at that size, and the
+description was covering the bottom third of the picture it describes.
+
+Nothing is lost to a screen reader by that. The panel is hidden with
+`opacity: 0`, not `display: none`, so the description is still in the
+document and still announced; it is also revealed by `:focus-within`,
+which is ungated, so anyone tabbing to a card sees it on any device.
 
 Leave the `alt=""` on these photos empty, amenity and favorite alike. The
 name is already on the page as real text beside the photo, so filling in
