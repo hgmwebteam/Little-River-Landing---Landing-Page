@@ -3123,7 +3123,7 @@ a { color: inherit; text-decoration: none; }
    where the plate gets its authority: measured, the code lands at
    16.4:1. The tracking is the coupon tell — a redemption code is
    read one character at a time, not as a word, and 0.08em is what
-   stops WELCOM10 reading as a misspelling.
+   stops WELCOME10 reading as a misspelling.
 
    min-height is bumped a step over --field-h. The plate is the
    payload of the page and a field-height box makes it look like

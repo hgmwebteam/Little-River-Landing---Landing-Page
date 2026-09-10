@@ -761,7 +761,7 @@ body {
    set in this layer.
 
    Display family and lining numerals. The Georgia fallback inside
-   --font-display has OLDSTYLE numerals, which would render WELCOM10 with an
+   --font-display has OLDSTYLE numerals, which would render WELCOME10 with an
    x-height 1 and 0 — a code that reads wrong is a code that gets typed wrong,
    so this does not get to depend on the webfont arriving. */
 .type-code {
