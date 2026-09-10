@@ -1,0 +1,38 @@
+# Netlify configuration for Little River Landing.
+#
+# Static site: the repo root is published as-is. The only server code is
+# the handful of signup functions in netlify/functions, which route
+# themselves via `export const config = { path }` — no redirect needed
+# for /api/subscribe*.
+
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# Clean slugs for the campaign pages and the thank-you page. Written out
+# explicitly instead of relying on the "Pretty URLs" post-processing
+# toggle, so the routes hold whatever that setting is.
+[[redirects]]
+  from = "/signupnow"
+  to = "/signupnow.html"
+  status = 200
+
+[[redirects]]
+  from = "/booknow"
+  to = "/booknow.html"
+  status = 200
+
+[[redirects]]
+  from = "/booking"
+  to = "/booking.html"
+  status = 200
+
+[[redirects]]
+  from = "/promo"
+  to = "/promo.html"
+  status = 200
+
+[[redirects]]
+  from = "/welcome"
+  to = "/welcome.html"
+  status = 200

@@ -284,22 +284,7 @@
              beside it. Same four files, so nothing extra
              downloads, and alt stays empty because the title is
              right under it. -->
-        <!-- EVERY AMENITY PHOTO IS A LOOPING CLIP, here and in the deck
-             on the right. Same class as the <img> it replaced, so it
-             takes the photo's size, crop and radius; the still it
-             replaced is the poster, so before anything has loaded, or
-             without JavaScript, the section shows exactly what it used
-             to. data-play-in-view hands each one to the same script as
-             the closing offer's video: paused off screen, nudged if
-             autoplay was refused, held on the poster under reduced
-             motion. -->
-        <video class="process__step-photo"
-               poster="assets/img/amenity-2.webp"
-               autoplay muted loop playsinline preload="metadata"
-               aria-hidden="true"
-               data-play-in-view>
-          <source src="assets/video/lodging-1.mp4" type="video/mp4">
-        </video>
+        <img class="process__step-photo" src="assets/img/amenity-2.webp" alt="">
 
         <!-- THE TAP TARGET, phone only — the whole photograph, not a
              chevron in a corner of it. It fills the photo's grid
@@ -343,13 +328,7 @@
       </li>
 
       <li class="process__step" data-step="1">
-        <video class="process__step-photo"
-               poster="assets/img/amenity-1.webp"
-               autoplay muted loop playsinline preload="metadata"
-               aria-hidden="true"
-               data-play-in-view>
-          <source src="assets/video/hull-and-hearth-1.mp4" type="video/mp4">
-        </video>
+        <img class="process__step-photo" src="assets/img/amenity-1.webp" alt="">
 
         <button class="process__toggle" type="button"
                 aria-expanded="false"
@@ -365,13 +344,7 @@
       </li>
 
       <li class="process__step" data-step="2">
-        <video class="process__step-photo"
-               poster="assets/img/amenity-4.webp"
-               autoplay muted loop playsinline preload="metadata"
-               aria-hidden="true"
-               data-play-in-view>
-          <source src="assets/video/water-amenities-1.mp4" type="video/mp4">
-        </video>
+        <img class="process__step-photo" src="assets/img/amenity-4.webp" alt="">
 
         <button class="process__toggle" type="button"
                 aria-expanded="false"
@@ -387,13 +360,7 @@
       </li>
 
       <li class="process__step" data-step="3">
-        <video class="process__step-photo"
-               poster="assets/img/amenity-3.webp"
-               autoplay muted loop playsinline preload="metadata"
-               aria-hidden="true"
-               data-play-in-view>
-          <source src="assets/video/ships-store-1.mp4" type="video/mp4">
-        </video>
+        <img class="process__step-photo" src="assets/img/amenity-3.webp" alt="">
 
         <button class="process__toggle" type="button"
                 aria-expanded="false"
@@ -454,40 +421,16 @@
          DOM order is also the stacking order. -->
     <div class="process__media" data-process-media data-reveal="fade">
       <div class="process__card" data-step="0">
-        <video class="process__photo"
-               poster="assets/img/amenity-2.webp"
-               autoplay muted loop playsinline preload="metadata"
-               aria-hidden="true"
-               data-play-in-view>
-          <source src="assets/video/lodging-1.mp4" type="video/mp4">
-        </video>
+        <img class="process__photo" src="assets/img/amenity-2.webp" alt="">
       </div>
       <div class="process__card" data-step="1">
-        <video class="process__photo"
-               poster="assets/img/amenity-1.webp"
-               autoplay muted loop playsinline preload="metadata"
-               aria-hidden="true"
-               data-play-in-view>
-          <source src="assets/video/hull-and-hearth-1.mp4" type="video/mp4">
-        </video>
+        <img class="process__photo" src="assets/img/amenity-1.webp" alt="">
       </div>
       <div class="process__card" data-step="2">
-        <video class="process__photo"
-               poster="assets/img/amenity-4.webp"
-               autoplay muted loop playsinline preload="metadata"
-               aria-hidden="true"
-               data-play-in-view>
-          <source src="assets/video/water-amenities-1.mp4" type="video/mp4">
-        </video>
+        <img class="process__photo" src="assets/img/amenity-4.webp" alt="">
       </div>
       <div class="process__card" data-step="3">
-        <video class="process__photo"
-               poster="assets/img/amenity-3.webp"
-               autoplay muted loop playsinline preload="metadata"
-               aria-hidden="true"
-               data-play-in-view>
-          <source src="assets/video/ships-store-1.mp4" type="video/mp4">
-        </video>
+        <img class="process__photo" src="assets/img/amenity-3.webp" alt="">
       </div>
 
       <!-- THE DOTS. A rail down the right of the deck saying how many

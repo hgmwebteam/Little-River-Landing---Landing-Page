@@ -415,9 +415,51 @@ results.
 ## The email forms
 
 There are two — the one in the hero and the one in the closing offer — and
-both point at `action="[FORM ACTION URL]"`. Replace that in both places with
-the real form or funnel URL. Until you do, submitting shows a reminder popup
-instead of quietly failing.
+both are wired to GoHighLevel through a Netlify Function. On submit,
+`script.js` posts `{ email }` to the path in the form's
+`data-subscribe-endpoint` attribute (default `/api/subscribe`) and waits
+for the answer. The function upserts the contact into GHL and applies one
+tag. The tag lives in the function, never in the page, so it cannot be
+changed from the browser.
+
+**Only valid addresses get through.** The function refuses an address
+(HTTP 400) when any of three checks fails: it is not shaped like
+`name@domain.tld`; the domain is on the throwaway list in
+`netlify/lib/disposableDomains.mjs`; or a DNS lookup finds no MX or A
+record for the domain (typos like `gmail.con`). A 400 is the one answer
+that stops the visitor: the field gets a red edge and a line under it
+(`.offer-form__error`), and they stay on the page. Any other outcome — OK,
+a 5xx, a network failure, no answer inside five seconds — still sends them
+to `welcome.html`, and a slow or broken resolver is logged and let through.
+An outage never costs a lead; only a definite "invalid" does.
+
+The forms carry `novalidate` so the browser's own bubble never appears
+alongside the inline line. The shape check also runs in `script.js` first,
+so `a@b` is refused without a request. While the server is checking, the
+button reads `CHECKING…` and is disabled.
+
+| Page | Endpoint | Tag applied in GHL |
+|---|---|---|
+| `index.html`, `booknow.html` | `/api/subscribe` | `instagram-ai-landing-page` |
+| `signupnow.html` | `/api/subscribe/signupnow` | `facebook-ai-landing-page` |
+| `booking.html` | `/api/subscribe/booking` | `meta-ai-landing-page` |
+| `promo.html` | `/api/subscribe/promo` | `tiktok-ai-landing-page` |
+
+The four campaign pages are copies of `index.html` that differ **only** in
+that attribute, on both forms. Edit `index.html`, then re-copy it and swap
+the attribute (a `sed` one-liner) rather than editing four files by hand.
+`netlify.toml` serves each at its clean slug (`/signupnow`, and so on).
+
+The shared handler is `netlify/lib/ghlSubscribe.mjs`; the per-tag routes
+are the four files in `netlify/functions/`. It reads `GHL_API_KEY` and
+`GHL_LOCATION_ID` — from `.env` under `netlify dev` locally, and from the
+site's environment variables on Netlify. The token must be a private
+integration token from the same sub-account as the location ID, or GHL
+answers 401. Failures are logged with a `[subscribe]` prefix and never
+shown to the visitor.
+
+Without JavaScript the forms have no `action`, so they do nothing. That is
+a known gap, not an oversight.
 
 The two are laid out differently on purpose. The hero's box goes side by
 side — field, then button — as soon as there is room. The closing one does

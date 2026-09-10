@@ -915,18 +915,129 @@
   });
 
   /* --- EMAIL FORMS -------------------------------------------
-     While action="[FORM ACTION URL]" is still a placeholder the
-     form can't submit anywhere, so this shows a reminder instead
-     of silently reloading the page. Once you paste in a real
-     form URL, this check steps out of the way.
+     Both signup forms post the email to a Netlify Function that
+     upserts the contact into GoHighLevel and tags it. Which tag
+     is decided by WHICH endpoint the form hits, and the endpoint
+     is fixed per page in data-subscribe-endpoint on the <form>
+     (default /api/subscribe). The tag itself never appears in
+     the browser, so attribution cannot be edited client-side.
+
+     The submit WAITS for the function, but only one answer can
+     stop the visitor: a 400, which means the server checked the
+     address (shape, throwaway domain, can the domain receive
+     mail) and says no. That shows the inline error. Anything
+     else — OK, a 5xx, a network failure, a slow response — sends
+     them on to welcome.html. A CRM or DNS outage must never
+     stand between a real visitor and the code.
+
+     The shape check runs here first too, so `a@b` is refused
+     without a round trip. Same expression as the server's.
   ------------------------------------------------------------ */
-  document.querySelectorAll('.offer-form').forEach(function (form) {
-    form.addEventListener('submit', function (e) {
-      var action = form.getAttribute('action') || '';
-      if (action.indexOf('[') === 0) {
-        e.preventDefault();
-        alert('This form has no destination yet.\n\nOpen index.html and replace [FORM ACTION URL] with your form or funnel URL.');
+  var DEFAULT_SUBSCRIBE_ENDPOINT = '/api/subscribe';
+  var EMAIL_RE = /^[^\s@]+@([a-z0-9-]+\.)+[a-z]{2,}$/i;
+  var SUBMIT_TIMEOUT_MS = 5000;
+  var MSG_EMPTY   = 'Please enter your email address.';
+  var MSG_INVALID = 'Please enter a valid email address.';
+  var LABEL_BUSY  = 'CHECKING…';
+
+  function goToWelcome() { window.location.assign('welcome.html'); }
+
+  /* The message element sits after .offer-form__control and is
+     [hidden] until needed. role="alert" on it means assistive tech
+     announces the text the moment it appears, so nothing here has
+     to manage focus for the announcement — focus goes back to the
+     field so the visitor can fix it. */
+  function setFormError(form, message) {
+    var input   = form.querySelector('input[type="email"]');
+    var control = form.querySelector('.offer-form__control');
+    var note    = form.querySelector('.offer-form__error');
+    if (control) control.classList.add('is-invalid');
+    if (note) { note.textContent = message; note.hidden = false; }
+    if (input) {
+      input.setAttribute('aria-invalid', 'true');
+      if (note && note.id) input.setAttribute('aria-describedby', note.id);
+      input.focus();
+    }
+  }
+
+  function clearFormError(form) {
+    var input   = form.querySelector('input[type="email"]');
+    var control = form.querySelector('.offer-form__control');
+    var note    = form.querySelector('.offer-form__error');
+    if (control) control.classList.remove('is-invalid');
+    if (note) { note.textContent = ''; note.hidden = true; }
+    if (input) {
+      input.removeAttribute('aria-invalid');
+      input.removeAttribute('aria-describedby');
+    }
+  }
+
+  /* The original label is kept on the button so the swap can be
+     undone, and the input goes read-only so the value being checked
+     is the value that gets sent. */
+  function setBusy(form, busy) {
+    var button = form.querySelector('button[type="submit"]');
+    var input  = form.querySelector('input[type="email"]');
+    if (button) {
+      if (busy) {
+        if (!button.hasAttribute('data-label')) button.setAttribute('data-label', button.textContent);
+        button.textContent = LABEL_BUSY;
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+      } else {
+        if (button.hasAttribute('data-label')) button.textContent = button.getAttribute('data-label');
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
       }
+    }
+    if (input) input.readOnly = !!busy;
+  }
+
+  /* Resolves with the Response, or rejects on a network failure or
+     after SUBMIT_TIMEOUT_MS. Both rejections are treated the same by
+     the caller: not the server's verdict, so let the visitor through. */
+  function submitSignup(email, endpoint) {
+    endpoint = endpoint || DEFAULT_SUBSCRIBE_ENDPOINT;
+    var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = setTimeout(function () { if (controller) controller.abort(); }, SUBMIT_TIMEOUT_MS);
+    var options = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email })
+    };
+    if (controller) options.signal = controller.signal;
+    return fetch(endpoint, options).then(
+      function (res) { clearTimeout(timer); return res; },
+      function (err) { clearTimeout(timer); throw err; }
+    );
+  }
+
+  document.querySelectorAll('.offer-form').forEach(function (form) {
+    var input = form.querySelector('input[type="email"]');
+    if (input) input.addEventListener('input', function () { clearFormError(form); });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (form.getAttribute('aria-busy') === 'true') return;
+
+      var email = input ? input.value.trim() : '';
+      if (!email)                { setFormError(form, MSG_EMPTY);   return; }
+      if (!EMAIL_RE.test(email)) { setFormError(form, MSG_INVALID); return; }
+
+      clearFormError(form);
+      setBusy(form, true);
+      form.setAttribute('aria-busy', 'true');
+
+      var done = function () { setBusy(form, false); form.removeAttribute('aria-busy'); };
+
+      if (typeof fetch !== 'function') { goToWelcome(); return; }
+
+      submitSignup(email, form.getAttribute('data-subscribe-endpoint')).then(function (res) {
+        if (res.status === 400) { done(); setFormError(form, MSG_INVALID); return; }
+        goToWelcome();
+      }, function () {
+        goToWelcome();
+      });
     });
   });
 })();
