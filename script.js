@@ -137,9 +137,27 @@
   });
 
   /* --- RAIL ARROWS -------------------------------------------
-     Steps the rail by whole cards. Reading the card's own width
-     off the DOM rather than hard coding it means the CSS stays
-     the single source of truth for how wide a card is.
+     Steps a horizontal rail by whole cards. The scroller carries
+     the overflow, the item holder carries the cards, and every
+     stop is derived from live rects so the CSS stays the single
+     source of truth for how wide a card is and how it snaps.
+
+     Two elements rather than one because in general they differ:
+     on the reviews a max-content track sits inside a narrower
+     viewport, so the viewport scrolls and the track holds the
+     cards. On a .slider__track rail they are the same element,
+     which is what the fallback covers.
+
+     LOOPING ([data-rail-loop] on the scroller, the reviews): the
+     card set is cloned once before and once after itself, so both
+     edges always show a neighbour and there is never blank track.
+     Once a scroll settles on a clone, the viewport is teleported
+     one whole set back into the originals — same pixels on screen,
+     no animation — so the loop is invisible. Clones are aria-hidden
+     and taken out of the tab order.
+
+     PERSIST ([data-rail-persist] on the nav): the arrows stay on
+     screen even when every card fits, instead of hiding.
   ------------------------------------------------------------ */
   var stillMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -147,16 +165,6 @@
     var section = nav.closest('section');
     if (!section) return;
 
-    /* TWO ELEMENTS, NOT ONE, because in general they are not the
-       same element. The scroller is whatever carries the overflow;
-       the item holder is whatever the cards are children of.
-
-       On the reviews they differ — a max-content track inside a
-       narrower viewport, so the viewport scrolls and the track
-       holds the cards. On a .slider__track rail they are the same
-       element, which is what the fallback covers: a section that
-       marks neither attribute still works, so this stays
-       compatible with the markup it was originally written for. */
     var scroller = section.querySelector('[data-rail-scroller]')
                 || section.querySelector('.slider__track');
     var items    = section.querySelector('[data-rail-items]') || scroller;
@@ -164,20 +172,28 @@
     var next     = nav.querySelector('[data-rail-next]');
     if (!scroller || !items || !prev || !next) return;
 
+    var loop  = scroller.hasAttribute('data-rail-loop') && items.children.length > 1;
+    var count = items.children.length;   /* originals */
+    if (loop) {
+      var originals = Array.prototype.slice.call(items.children);
+      var clone = function (card) {
+        var c = card.cloneNode(true);
+        c.setAttribute('aria-hidden', 'true');
+        c.setAttribute('data-rail-clone', '');
+        c.setAttribute('tabindex', '-1');
+        Array.prototype.forEach.call(c.querySelectorAll('a, button'), function (el) {
+          el.setAttribute('tabindex', '-1');
+        });
+        return c;
+      };
+      originals.forEach(function (card) { items.appendChild(clone(card)); });
+      for (var k = originals.length - 1; k >= 0; k--) items.insertBefore(clone(originals[k]), items.firstChild);
+      scroller.classList.add('is-looping');
+    }
+
     /* How far one card is from the next, measured BETWEEN two of
-       them rather than computed from a width plus a gap.
-
-       The computed version was wrong on this rail and wrong
-       quietly: it read columnGap, and the review cards are spaced
-       by margin-right on each card rather than by a gap on the
-       track — so it returned one card wide with no spacing, and
-       every press would have left the rail short of the snap
-       point by that margin. Measuring the distance between two
-       cards gets the right answer whichever way the spacing is
-       done, which also means the CSS stays free to change it.
-
-       The width-plus-gap path is kept for the one-card case, where
-       there is no second card to measure against. */
+       them rather than computed from a width plus a gap, so it is
+       right whether the spacing is a flex gap or a margin. */
     function step() {
       var cards = items.children;
       if (!cards.length) return scroller.clientWidth;
@@ -190,41 +206,33 @@
       return cards[0].getBoundingClientRect().width + declared;
     }
 
-    /* Where each card would come to rest, in the scroller's own
-       scroll coordinates. Derived from live rects rather than from
-       offsetLeft, which is measured against the nearest positioned
-       ancestor and so is only the same number by coincidence.
-
-       THE + scroller.scrollLeft IS THE WHOLE POINT and it belongs
-       on exactly one side of the subtraction. A rect is measured
-       against the viewport, so it already moves as the rail
-       scrolls; adding the current scroll back converts it into a
-       position in the content that does not. Written with the
-       scroll added to both the card and the origin — which is the
-       shape this first took — the two cancel and the function
-       returns each card's CURRENT distance from the left edge
-       instead. It then looks right at scrollLeft 0 and is wrong
-       everywhere else, so it half worked: snap corrected the bad
-       targets at some widths, and at 1100x800 it left prev dead
-       at the end of the rail, computing stops of [0,0,170,570]
-       for a rail whose real stops are [0,400,630].
-
-       scroll-padding-left is subtracted because that is what a
-       snap lands on: the track carries a gutter and the viewport
-       carries a matching scroll-padding, so the first card's
-       resting position is 0 and not the width of the gutter.
-
-       Clamped to the scrollable range and de-duplicated, because
-       past the end several cards resolve to the same final
-       position and a duplicate stop would be a press that does
-       nothing. */
-    function stops() {
+    /* The scrollLeft at which CSS snap rests this card, unclamped.
+       A rect is measured against the viewport, so adding the
+       current scroll back converts it into a position in the
+       content that does not move. scroll-padding-left is taken
+       off because that is what a start snap lands on; a centre
+       snapping card (the reviews) rests with its midpoint on the
+       viewport's midpoint instead. */
+    function stopOf(card) {
       var origin = scroller.getBoundingClientRect().left;
       var pad = parseFloat(getComputedStyle(scroller).scrollPaddingLeft) || 0;
+      var r = card.getBoundingClientRect();
+      var at = r.left - origin + scroller.scrollLeft - pad;
+      if ((getComputedStyle(card).scrollSnapAlign || '').indexOf('center') !== -1) {
+        at -= (scroller.clientWidth - r.width) / 2;
+      }
+      return at;
+    }
+
+    /* Every resting position, clamped to the scrollable range and
+       de-duplicated: past the end several cards resolve to the
+       same final position, and a duplicate stop would be a press
+       that does nothing. */
+    function stops() {
       var max = scroller.scrollWidth - scroller.clientWidth;
       var out = [];
       Array.prototype.forEach.call(items.children, function (card) {
-        var at = card.getBoundingClientRect().left - origin + scroller.scrollLeft - pad;
+        var at = stopOf(card);
         if (at < 0) at = 0;
         if (at > max) at = max;
         if (!out.length || Math.abs(at - out[out.length - 1]) > 1) out.push(at);
@@ -232,21 +240,10 @@
       return out;
     }
 
-    /* GOES TO THE NEXT CARD, not a card's width along, and the
-       difference shows at the ends of the rail.
-
-       scrollBy(pitch) was the obvious version and it had a bug.
-       The track snaps mandatorily, so the browser pulls whatever
-       position the scroll lands on to the nearest card — and at
-       the right hand end the rail is clamped part way through a
-       step, so from there one press of prev moved back a full
-       card width, landed between two cards nearer the first, and
-       snap took it to the very start. One press, two cards
-       skipped. Measured at 1440x900: 530 -> 0 instead of 530 -> 400.
-
-       Choosing the target from the list of card positions cannot
-       do that. The pixel step is kept as a fallback for a rail
-       whose cards cannot be measured. */
+    /* Goes to the NEXT CARD, not a card's width along. scrollBy a
+       pitch from a clamped end position lands between two cards
+       and mandatory snap then skips one. Choosing the target from
+       the list of real stops cannot do that. */
     function go(dir) {
       var at = scroller.scrollLeft;
       var list = stops();
@@ -266,9 +263,9 @@
 
       scroller.scrollTo({
         left: target,
-        /* An explicit 'smooth' here would win over the reduced
-           motion rule in _template.css, which only reaches the
-           CSS scroll-behavior property. So the check is here. */
+        /* An explicit 'smooth' would win over the reduced motion
+           rule in _template.css, which only reaches scroll-behavior,
+           so the check is here. */
         behavior: stillMotion.matches ? 'auto' : 'smooth'
       });
     }
@@ -276,28 +273,125 @@
     prev.addEventListener('click', function () { go(-1); });
     next.addEventListener('click', function () { go(1); });
 
+    /* Loop bookkeeping. The originals occupy stops [count, 2*count).
+       A settled position outside that window is shifted by one set
+       width (count × pitch), which lands on the identical card
+       among the originals. */
+    var setWidth = 0;
+    function home() {
+      setWidth = count * step();
+      return stopOf(items.children[count]);
+    }
+    function teleport() {
+      if (!loop) return;
+      var at = scroller.scrollLeft;
+      var start = home();
+      var end = start + setWidth;
+      var to = at;
+      while (to < start - 0.5) to += setWidth;
+      while (to >= end - 0.5) to -= setWidth;
+      if (Math.abs(to - at) > 0.5) scroller.scrollLeft = to;
+    }
+    if (loop) {
+      scroller.scrollLeft = home();   /* land on the first original, not its leading clone */
+      var settle;
+      scroller.addEventListener('scroll', function () {
+        clearTimeout(settle);
+        settle = setTimeout(teleport, 160);   /* once momentum and snap have come to rest */
+      }, { passive: true });
+      if ('onscrollend' in window) scroller.addEventListener('scrollend', teleport);
+      window.addEventListener('resize', function () { home(); teleport(); });
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () { scroller.scrollLeft = home(); });
+      }
+    }
+
     /* A spent arrow is disabled rather than left live, so a
        keyboard user is not tabbing onto a control that does
-       nothing. 1px of slack absorbs sub pixel scroll positions.
+       nothing. A looping rail has no ends, so both stay live.
+       Where every card fits the whole control goes away — unless
+       the nav asked to persist. A few px of sub-pixel slop is not
+       a scroll. */
+    var persist = nav.hasAttribute('data-rail-persist');
 
-       On a wide monitor every card fits and the rail has nothing
-       left to travel, so the whole control goes away instead of
-       sitting there permanently dead. The threshold is a gap
-       rather than zero: sub pixel rounding on the rail's padding
-       leaves a few stray pixels of scroll that are not worth a
-       button. Re-runs on resize, so it comes back if the window
-       narrows. */
     function sync() {
       var max = scroller.scrollWidth - scroller.clientWidth;
-      nav.hidden = max <= 24;
-      prev.disabled = scroller.scrollLeft <= 1;
-      next.disabled = scroller.scrollLeft >= max - 1;
+      var scrollable = max > 4;
+      nav.hidden = !persist && max <= 24;
+      prev.disabled = !scrollable || (!loop && scroller.scrollLeft <= 1);
+      next.disabled = !scrollable || (!loop && scroller.scrollLeft >= max - 1);
     }
 
     scroller.addEventListener('scroll', sync, { passive: true });
     window.addEventListener('resize', sync);
     sync();
   });
+
+  /* --- READ MORE ---------------------------------------------
+     Phones clamp a review to five lines behind a Read More
+     button. No button when nothing is clamped — a short review
+     has nothing more to read — and the check re-runs on resize
+     and once the web fonts land, since both change the wrap.
+  ------------------------------------------------------------ */
+  document.querySelectorAll('[data-read-more]').forEach(function (btn) {
+    var card = btn.closest('.review');
+    if (!card) return;
+    var body = card.querySelector('.review__body');
+    btn.setAttribute('aria-expanded', 'false');
+
+    function fit() {
+      if (card.classList.contains('is-expanded')) return;
+      btn.hidden = !!body && body.scrollHeight <= body.clientHeight + 1;
+    }
+    fit();
+    window.addEventListener('resize', fit);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+
+    btn.addEventListener('click', function () {
+      var open = card.classList.toggle('is-expanded');
+      btn.setAttribute('aria-expanded', String(open));
+      btn.textContent = open ? 'Show Less' : 'Read More';
+    });
+  });
+
+  /* --- COUNT-UP ----------------------------------------------
+     [data-count] (with an optional data-count-suffix) counts from
+     0 to its number the first time it is half on screen. The span
+     is pinned to its final width first so the neighbouring stats
+     never shuffle while the digits change. Reduced motion: the
+     final number is simply left as written.
+  ------------------------------------------------------------ */
+  (function () {
+    var els = document.querySelectorAll('[data-count]');
+    if (!els.length || stillMotion.matches || !('IntersectionObserver' in window)) return;
+
+    els.forEach(function (el) {
+      var end = parseFloat(el.getAttribute('data-count'));
+      var suffix = el.getAttribute('data-count-suffix') || '';
+      var final = el.textContent;
+      if (isNaN(end)) return;
+
+      function run() {
+        el.style.minWidth = el.getBoundingClientRect().width + 'px';
+        var start = null, duration = 1400;
+        function frame(t) {
+          if (start === null) start = t;
+          var p = Math.min(1, (t - start) / duration);
+          var eased = 1 - Math.pow(1 - p, 4);   /* quart-out, like --ease-out */
+          el.textContent = (p < 1 ? Math.round(end * eased) + suffix : final);
+          if (p < 1) requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      }
+
+      var io = new IntersectionObserver(function (entries) {
+        if (!entries[0].isIntersecting) return;
+        io.disconnect();
+        run();
+      }, { threshold: 0.5 });
+      io.observe(el);
+    });
+  })();
 
   /* --- AMENITY STEPS -----------------------------------------
      Lights the step nearest the middle of the screen and deals

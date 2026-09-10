@@ -681,147 +681,154 @@
 </section>
 
 <!-- ============================================================
-     8 · TESTIMONIALS  —  badge + stats + self scrolling review rail
-     To use a review widget (Elfsight, etc.) instead, delete the
-     .review-rail block and paste the widget embed in its place.
+     8 · TESTIMONIALS  —  trust row + looping review rail
+     Matches the testimonial block on little-river-landing-website:
+     lake photo behind, cream panel with a 0.5px teal outline, four
+     tinted cards, and a curved tab on each side that steps the rail.
+
+     The section is a light island on the dark page (data-theme="light"),
+     and every colour it uses is declared on .reviews in styles.css so
+     the block matches the reference exactly rather than the page ramp.
+
+     Review count, rating and dates are placeholders to confirm.
      ============================================================ -->
-<section class="section section--alt" id="reviews">
+<section class="section reviews" id="reviews" data-theme="light" aria-labelledby="reviews-title">
+  <!-- Glyphs used only in this section. Kept here rather than in a
+       page-wide sprite so the block travels whole between pages. -->
+  <svg class="reviews__sprite" width="0" height="0" aria-hidden="true" focusable="false">
+    <symbol id="lrl-star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8L12 2.5z"/></symbol>
+    <symbol id="lrl-chevron-rail" viewBox="7.1665 121.3721 14.5377 35.2539"><path d="M20.8624 121.374C21.6416 121.298 21.8814 123.201 21.4685 123.865C21.2806 124.167 21.0918 124.374 20.8832 124.641L19.6977 126.164L13.4135 134.349L11.0913 137.362C10.8425 137.682 10.5745 137.959 10.3206 138.292C10.0133 138.694 9.89377 138.931 10.2119 139.433C10.4101 139.788 10.7576 140.064 10.968 140.378C11.3213 140.905 11.7349 141.355 12.1016 141.847L17.2487 148.62C17.6274 149.116 18.0441 149.371 18.3448 150.055C18.4018 150.184 18.9969 150.649 19.0838 150.807C19.4011 151.386 19.705 151.784 20.1365 152.204C20.2381 152.303 20.4474 152.674 20.5613 152.82C20.9354 153.299 21.2895 153.806 21.6348 154.32C21.6777 154.988 21.8228 155.391 21.4969 156.017C21.1016 156.777 20.5569 156.77 20.0358 156.303C19.2232 155.476 18.3607 154.23 17.6104 153.261L13.091 147.38L9.45133 142.668C8.832 141.873 8.20003 141.098 7.59763 140.278C7.14633 139.664 6.99508 138.631 7.40862 137.917C7.74838 137.33 8.22658 136.815 8.62677 136.289C10.0774 134.382 11.5758 132.553 13.0388 130.659L17.6056 124.723C18.3484 123.75 19.1192 122.629 19.9199 121.735C20.1142 121.518 20.6036 121.425 20.8624 121.374Z"/></symbol>
+  </svg>
+
+  <!-- The photo is pre-washed to the section colour at its edges,
+       so it sits at full opacity with no scrim over it. -->
+  <div class="reviews__bg" aria-hidden="true">
+    <img class="reviews__bg-img" src="assets/img/testimonials-bg.webp" width="1440" height="736" alt="" loading="lazy" decoding="async">
+  </div>
+
   <div class="container">
-    <div class="panel" data-reveal-group>
+    <div class="reviews__head" data-reveal-group>
       <p class="eyebrow type-eyebrow">TESTIMONIALS</p>
-      <h2 class="heading type-section-title">What Our Guests Are Saying</h2>
+      <h2 class="heading" id="reviews-title">What Our Guests Are Saying</h2>
+    </div>
 
-      <div class="stats">
-        <div class="stats__badge"><img src="assets/img/super-host-logo-reversed.png" alt="Airbnb Superhost" width="1374" height="712" loading="lazy" decoding="async"></div>
-        <div class="stat">
-          <div class="stat__number type-card-title fw-bold">20,000+</div>
-          <div class="stat__label type-caption">Reviews</div>
-        </div>
-        <div class="stat">
-          <div class="stat__number type-card-title fw-bold">11</div>
-          <div class="stat__label type-caption">Years Hosting</div>
-        </div>
+    <!-- Trust row: three value-over-label columns, one row at every width. -->
+    <div class="reviews__summary" data-reveal-group>
+      <div class="review-stat">
+        <span class="review-stat__value review-stat__value--logo">
+          <svg class="review-stat__logo" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path fill="#EA4335" d="M12 5.04c1.94 0 3.28.84 4.04 1.54l2.95-2.88C17.2 2.02 14.84 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.38 2.62C6.4 7.17 8.97 5.04 12 5.04Z"/>
+            <path fill="#4285F4" d="M22.56 12.25c0-.9-.08-1.56-.25-2.25H12v4.09h6.06c-.12 1.02-.78 2.55-2.25 3.58l3.29 2.55c1.97-1.82 3.46-4.5 3.46-7.97Z"/>
+            <path fill="#FBBC05" d="M5.56 14.31A6.99 6.99 0 0 1 5.18 12c0-.8.14-1.58.37-2.31L2.17 7.07A11.02 11.02 0 0 0 1 12c0 1.77.42 3.45 1.17 4.93l3.39-2.62Z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.29-2.55c-.9.62-2.08 1.06-3.99 1.06-3.03 0-5.6-2-6.52-4.76l-3.38 2.62C3.91 20.53 7.64 23 12 23Z"/>
+          </svg>
+        </span>
+        <span class="review-stat__label">Verified Reviews</span>
       </div>
+      <div class="review-stat">
+        <span class="review-stat__value" data-count="400" data-count-suffix="+">400+</span>
+        <span class="review-stat__label">Reviews</span>
+      </div>
+      <div class="review-stat">
+        <span class="review-stat__value">5</span>
+        <span class="review-stat__label">Star Rating</span>
+      </div>
+    </div>
 
-      <!-- A DRIVEN RAIL. It used to scroll itself on a loop, with
-           hovering as the only way to stop it; now it holds still
-           and the arrows below move it a card at a time. Where
-           there is no mouse the arrows are not there and a thumb
-           swipes the row, which is what a phone did before too.
+    <!-- THE RAIL. data-rail-loop makes script.js clone the card set
+         either side of itself, so both edges always show a neighbour
+         and Next/Prev never run out. data-rail-persist keeps the tabs
+         on screen even when every card fits.
 
-           Add or remove cards freely. The old version cloned the
-           set to close its loop, which meant the count had to be
-           EVEN or the seam did not line up — that constraint is
-           gone with the loop. One card or nine, the arrows work
-           out the distance from the cards themselves, and they
-           hide themselves if everything already fits.
-
-           data-rail-scroller marks the element that actually
-           scrolls and data-rail-items the one whose children are
-           the cards. They are two different elements here — the
-           track is wider than its viewport by design — and the
-           script needs both: the step comes from the cards, the
-           scrolling happens on the viewport. -->
-      <div class="review-rail" data-reveal="fade">
-        <div class="review-rail__viewport" data-rail-scroller>
+         Add or remove cards freely — any count works. The centred
+         card is always whole; its neighbours peek equally either
+         side. On phones the tabs are hidden and a thumb swipes. -->
+    <div class="review-rail" data-reveal="fade">
+      <div class="review-rail__panel">
+        <!-- The 0.5px outline is an SVG rect, not a CSS border, so it
+             anti-aliases to the same weight as the tabs' stroke. -->
+        <svg class="review-rail__outline" width="0" height="0" aria-hidden="true" focusable="false"><rect/></svg>
+        <div class="review-rail__viewport" data-rail-scroller data-rail-loop>
           <div class="review-rail__track" data-rail-items>
 
-          <article class="review">
-            <p class="review__rating" role="img" aria-label="Rated 5.0 out of 5">
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="review__score type-caption">5.0</span>
-            </p>
+            <article class="review">
+              <header class="review__head">
+                <span class="review__avatar" aria-hidden="true">J</span>
+                <div>
+                  <p class="review__name">Jimmy</p>
+                  <p class="review__date"><time datetime="2026-06">June 2026</time></p>
+                </div>
+              </header>
+              <span class="review__stars" role="img" aria-label="Rated 5 out of 5">
+                <svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg>
+              </span>
+              <p class="review__body">&ldquo;First time here, we sat at a table outside, wonderful. The breeze, view, excellent service, good food, really nice place for an afternoon dinner.&rdquo;</p>
+              <button class="review__more" type="button" data-read-more>Read More</button>
+            </article>
 
-            <p class="review__body type-body">&ldquo;First time here, we sat at a table outside, wonderful. The breeze, view, excellent service, good food, really nice place for an afternoon dinner.&rdquo;</p>
+            <article class="review">
+              <header class="review__head">
+                <span class="review__avatar" aria-hidden="true">A</span>
+                <div>
+                  <p class="review__name">Andrea</p>
+                  <p class="review__date"><time datetime="2026-05">May 2026</time></p>
+                </div>
+              </header>
+              <span class="review__stars" role="img" aria-label="Rated 5 out of 5">
+                <svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg>
+              </span>
+              <p class="review__body">&ldquo;Great location. Reminded me of Ozark. I kept thinking, Ruth is gonna walk up any minute! We had a view of the lake through the trees from the little porch outside the room. The marina has a store and a restaurant. The restaurant was very good. Beautiful view from the deck though. This is close to Cedar Bluff and convenient to restaurants and stores.&rdquo;</p>
+              <button class="review__more" type="button" data-read-more>Read More</button>
+            </article>
 
-            <footer class="review__guest">
-              <p class="review__name type-body-lg fw-semibold">Jimmy</p>
-            </footer>
-          </article>
+            <article class="review">
+              <header class="review__head">
+                <span class="review__avatar" aria-hidden="true">J</span>
+                <div>
+                  <p class="review__name">Jennifer</p>
+                  <p class="review__date"><time datetime="2026-05">May 2026</time></p>
+                </div>
+              </header>
+              <span class="review__stars" role="img" aria-label="Rated 5 out of 5">
+                <svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg>
+              </span>
+              <p class="review__body">&ldquo;This place has been totally redone. They now have a steakhouse and the food is amazing. There&rsquo;s a new deck where you can sit outside to eat if you like. The view is beautiful. We had a steak with fried okra and pasta salad &mdash; everything was delicious and perfectly cooked. Delicious and fresh.&rdquo;</p>
+              <button class="review__more" type="button" data-read-more>Read More</button>
+            </article>
 
-          <article class="review">
-            <p class="review__rating" role="img" aria-label="Rated 5.0 out of 5">
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="review__score type-caption">5.0</span>
-            </p>
-
-            <p class="review__body type-body">&ldquo;Great location. Reminded me of Ozark. I kept thinking, Ruth is gonna walk up any minute! We had a view of the lake through the trees from the little porch outside the room. The marina has a store and a restaurant. The restaurant was very good. Beautiful view from the deck though. This is close to Cedar Bluff and convenient to restaurants and stores.&rdquo;</p>
-
-            <footer class="review__guest">
-              <p class="review__name type-body-lg fw-semibold">Andrea</p>
-            </footer>
-          </article>
-
-          <article class="review">
-            <p class="review__rating" role="img" aria-label="Rated 5.0 out of 5">
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="review__score type-caption">5.0</span>
-            </p>
-
-            <p class="review__body type-body">&ldquo;This place has been totally redone. They now have a steakhouse and the food is amazing. There&rsquo;s a new deck where you can sit outside to eat if you like. The view is beautiful. We had a steak with fried okra and pasta salad &mdash; everything was delicious and perfectly cooked. Delicious and fresh.&rdquo;</p>
-
-            <footer class="review__guest">
-              <p class="review__name type-body-lg fw-semibold">Jennifer</p>
-            </footer>
-          </article>
-
-          <article class="review">
-            <p class="review__rating" role="img" aria-label="Rated 5.0 out of 5">
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="icon icon--sm icon--star" aria-hidden="true"></span>
-              <span class="review__score type-caption">5.0</span>
-            </p>
-
-            <p class="review__body type-body">&ldquo;I&rsquo;ve been coming to this marina for years. It was very quiet at night time and left the fishing rods in the back of the truck for 3 nights and no one touched them. Nice family atmosphere. Everyone that worked there was super nice and very helpful. Thinking about going back this weekend.&rdquo;</p>
-
-            <footer class="review__guest">
-              <p class="review__name type-body-lg fw-semibold">Scott</p>
-            </footer>
-          </article>
+            <article class="review">
+              <header class="review__head">
+                <span class="review__avatar" aria-hidden="true">S</span>
+                <div>
+                  <p class="review__name">Scott</p>
+                  <p class="review__date"><time datetime="2026-04">April 2026</time></p>
+                </div>
+              </header>
+              <span class="review__stars" role="img" aria-label="Rated 5 out of 5">
+                <svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg><svg class="review__star" aria-hidden="true"><use href="#lrl-star"/></svg>
+              </span>
+              <p class="review__body">&ldquo;I&rsquo;ve been coming to this marina for years. It was very quiet at night time and left the fishing rods in the back of the truck for 3 nights and no one touched them. Nice family atmosphere. Everyone that worked there was super nice and very helpful. Thinking about going back this weekend.&rdquo;</p>
+              <button class="review__more" type="button" data-read-more>Read More</button>
+            </article>
 
           </div>
         </div>
+      </div>
 
-        <!-- Centred rather than up beside the heading, which is
-             where the other rail on this page put its arrows. This
-             panel's header is centre aligned, so arrows hung to one
-             side of it would be the only off-centre thing in the
-             block. type="button" so they never submit the offer
-             form higher up the page.
-
-             The label says what the control does, not what the
-             glyph is — a screen reader user is told "previous
-             reviews", and the chevron is aria-hidden because it
-             carries no information the label does not. -->
-        <div class="rail-nav rail-nav--center" data-rail-nav>
-          <button class="rail-nav__btn" type="button" data-rail-prev aria-label="Previous reviews">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-              <path d="m15 18-6-6 6-6"/>
-            </svg>
-          </button>
-          <button class="rail-nav__btn" type="button" data-rail-next aria-label="Next reviews">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-              <path d="m9 18 6-6-6-6"/>
-            </svg>
-          </button>
-        </div>
+      <!-- The tabs. Each is a transparent hit target that reaches 16px
+           past the tab; the inline SVG draws the cream tab with its
+           S-curve shoulders, overlapping the panel edge by 1px so the
+           outline runs unbroken from panel onto tab. Next is the same
+           asset mirrored. type="button" so they never submit a form. -->
+      <div class="review-rail__nav" data-rail-nav data-rail-persist>
+        <button class="review-rail__btn" type="button" data-rail-prev aria-label="Previous reviews">
+          <svg class="review-rail__tab" viewBox="0 0 29.8711 273.669" width="0" height="0" aria-hidden="true" focusable="false"><path class="review-rail__tab-fill" d="M29.8711 0H28.8711C28.8711 32.9784 0 16.1357 0 68.4219V205.247C0 257.533 28.8711 240.691 28.8711 273.669H29.8711Z"/><path class="review-rail__tab-line" d="M28.8711 0C28.8711 32.9784 0 16.1357 0 68.4219V205.247C0 257.533 28.8711 240.691 28.8711 273.669"/></svg>
+          <svg class="review-rail__glyph" aria-hidden="true" focusable="false"><use href="#lrl-chevron-rail"/></svg>
+        </button>
+        <button class="review-rail__btn" type="button" data-rail-next aria-label="Next reviews">
+          <svg class="review-rail__tab" viewBox="0 0 29.8711 273.669" width="0" height="0" aria-hidden="true" focusable="false"><path class="review-rail__tab-fill" d="M29.8711 0H28.8711C28.8711 32.9784 0 16.1357 0 68.4219V205.247C0 257.533 28.8711 240.691 28.8711 273.669H29.8711Z"/><path class="review-rail__tab-line" d="M28.8711 0C28.8711 32.9784 0 16.1357 0 68.4219V205.247C0 257.533 28.8711 240.691 28.8711 273.669"/></svg>
+          <svg class="review-rail__glyph" aria-hidden="true" focusable="false"><use href="#lrl-chevron-rail"/></svg>
+        </button>
       </div>
     </div>
   </div>

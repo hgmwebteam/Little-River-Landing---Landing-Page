@@ -974,31 +974,6 @@ a { color: inherit; text-decoration: none; }
    nav on and you break that. */
 .rail-nav[hidden] { display: none; }
 
-/* The reviews' variant: centred under its rail rather than hung
-   beside a heading, because that panel's header is centre
-   aligned and arrows off to one side would be the only thing in
-   the block that is not.
-
-   GATED ON A POINTER, NOT ON A WIDTH, which is the one thing that
-   differs from the nav in the section header. That one is a
-   desktop-layout decision — it appears when the header goes
-   two-column at 1024px. This one replaces the self-scrolling
-   animation that used to run, and that animation ran wherever
-   there was a mouse, including in a 900px-wide window. Gating on
-   width instead would leave a narrow desktop window with neither
-   the animation it used to have nor the arrows that replaced it.
-   A touchscreen gets no arrows and swipes the row, as before. */
-.rail-nav--center { display: none; }
-
-@media (hover: hover) and (pointer: fine) {
-  .rail-nav--center {
-    display: flex;
-    justify-content: center;
-    gap: var(--space-3);
-    margin-top: var(--space-5);
-  }
-}
-
 .rail-nav__btn {
   display: grid;
   place-items: center;
@@ -2551,163 +2526,6 @@ a { color: inherit; text-decoration: none; }
   .tall-card:hover .tall-card__img  { transform: scale(1.04); }
 }
 
-/* 8 · Review card
-   ------------------------------------------------------------
-   The card sits inside .panel, which carries data-theme="light",
-   so every token below resolves against the white panel rather
-   than the dark page. That is what lets one rule set describe a
-   raised surface without naming a single colour: secondary to
-   tertiary is a half step up from the panel's primary, and the
-   hairline does the rest.
-
-   Rating on top, quote in the middle, guest at the foot. The
-   order is deliberate — the score is the thing a skimmer reads,
-   the name is the thing that makes the quote credible, and the
-   quote only earns its length once both are established. */
-.review {
-  display: flex;
-  flex-direction: column;
-  /* 320px on a phone. Wide enough for four or five words a line,
-     which is where a quote stops reading like a caption, and
-     narrow enough to leave the next card's edge showing. */
-  width: min(20rem, calc(100vw - var(--space-9)));
-  /* Recessed rather than raised: the panel is brand-800, and a card
-     one step LIGHTER (brand-700) drops the quote's secondary text to
-     3.3:1. Two steps down the same ramp holds 8.2:1 at the dark end
-     and 5.3:1 at the light one, and the card still reads as its own
-     surface — a 1.9:1 luminance step off the panel. */
-  background: linear-gradient(
-    150deg,
-    var(--brand-950) 0%,
-    var(--brand-900) 100%
-  );
-  border: 1px solid var(--brand-700);
-  /* The card is darker than the panel, so the ramp's own text values
-     apply again here rather than the panel's lightened ones. */
-  --color-text-secondary: var(--gray-300);
-  --color-text-tertiary:  var(--gray-400);
-  border-radius: var(--radius-lg);
-  color: var(--color-text-primary);
-  padding: var(--space-4);
-  text-align: left;
-}
-
-/* --space-1 is the icon gap the scale exists for. The score is
-   pushed off the last star by a full step so it reads as a
-   separate fact and not a sixth glyph. */
-.review__rating {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--color-fg-rating);
-  margin-bottom: var(--space-3);
-}
-/* Secondary, not tertiary. The reference builds its three tier
-   hierarchy purely out of lightness, which works on its dark card
-   and does not survive the trip to a light one: gray-600 at 14px
-   lands on 3.2:1 against the foot of the card's gradient, short
-   of the 4.5:1 that small text owes. Every 14px line here is
-   secondary, and the hierarchy comes from position and weight
-   instead — which is the more durable way to build one anyway. */
-.review__score {
-  margin-left: var(--space-2);
-  color: var(--color-text-secondary);
-  font-variant-numeric: tabular-nums;
-}
-
-/* margin-top: auto pins the guest to the bottom edge, so a short
-   quote and a long one still line their names up across the
-   rail. Without it a two line review floats its name halfway up
-   the card and the row looks broken. */
-.review__body  { color: var(--color-text-secondary); margin-bottom: var(--space-4); }
-.review__guest { margin-top: auto; }
-.review__when { color: var(--color-text-secondary); }
-.review__unit { color: var(--color-text-secondary); }
-
-/* 8 · Review rail
-   ------------------------------------------------------------
-   A scroll track that nothing moves on its own. A thumb swipes
-   it; where there is a mouse, the arrows under it step it a card
-   at a time.
-
-   IT USED TO SCROLL ITSELF, on a 60s loop built from two cloned
-   copies of the cards translated -50%, with hover as the only
-   stop control. That is gone, and what went with it is worth
-   knowing because it removed three separate constraints:
-
-     · The clone. The card count had to be EVEN or the loop's
-       seam did not line up. Any count works now.
-     · The LEFT edge fade. On a snapped track the first card rests
-       flush against the panel's inner edge, so a fade there sits
-       on top of it and washes out the start of every line the
-       reader is actually trying to read. The right one is kept
-       below — see the note on it.
-     · The hover-and-focus-within pause, which was there because
-       motion a reader cannot stop fails WCAG 2.2.2. Nothing moves
-       unless the reader moves it, so the requirement no longer
-       applies rather than being satisfied by a workaround. */
-.review-rail { position: relative; margin-top: var(--space-5); }
-
-.review-rail__viewport {
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-padding-left: var(--container-x);
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.review-rail__viewport::-webkit-scrollbar { display: none; }
-
-.review-rail__track {
-  display: flex;
-  align-items: stretch;
-  width: max-content;
-  padding-inline: var(--container-x);
-}
-
-/* The gap is a margin on each card rather than a flex gap on the
-   track, and that is load bearing for the loop further down: a
-   flex gap sits BETWEEN items, so ten cards carry nine gaps, and
-   half of nine is not a whole number. Ten margins split evenly.
-   Do not swap it back to gap.
-
-   "none start" for the same reason the other rails use it — the
-   one word shorthand would set the block axis too and turn every
-   card into a vertical snap point. */
-.review-rail__track > * {
-  margin-right: var(--space-3);
-  scroll-snap-align: none start;
-}
-
-/* THE RIGHT EDGE ONLY. The card at the right of the rail is being
-   cut off mid-sentence — that is what says "there is more" — but
-   cut with a hard vertical line it reads as a rendering fault
-   rather than as content continuing, and the arrows underneath
-   are not enough on their own to explain it.
-
-   Left is deliberately bare. The first card snaps flush to the
-   panel's inner edge, so a fade on that side would lie over the
-   opening words of every review. This asymmetry is the point: the
-   two edges are not doing the same job.
-
-   --brand-800 is the panel's own ground, and a gradient has to
-   start at the exact colour behind it or it reads as a band
-   rather than a fade. Not --color-bg-primary, which resolves to
-   the panel's white here because .panel carries data-theme.
-
-   z-index over the cards but pointer-events off, so it never
-   swallows a click on the review underneath or blocks a swipe. */
-.review-rail::after {
-  content: "";
-  position: absolute;
-  inset-block: 0;
-  right: 0;
-  width: var(--space-5);                  /* 32px — 64px at desktop */
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(to left, var(--brand-800) 0%, transparent 100%);
-}
-
-
 /* ============================================================
    6 · LOCAL FAVOURITES
    No rules of its own — the section reuses .slider--even and
@@ -2869,52 +2687,6 @@ a { color: inherit; text-decoration: none; }
   .location-map:hover > img,
   .location-map:hover > iframe { filter: none; }
 }
-
-/* ============================================================
-   8 · TESTIMONIAL PANEL — brand-800 on the section's brand-900
-   ============================================================ */
-/* brand-800 on the section's brand-900, with a brand-700 hairline —
-   one ramp, three steps. 0.5px so the edge stays a hairline on a
-   retina screen instead of reading as a drawn frame. */
-.panel {
-  background: var(--brand-800);
-  color: var(--color-text-primary);
-  border: 0.5px solid var(--brand-700);
-  border-radius: var(--radius-lg);
-  /* brand-800 is a mid dark ground: the dark theme's gray-300 lands
-     at 4.28:1 on it and gray-400 at 3.80:1, both short of AA for the
-     eyebrow and the stat labels. Two steps lighter clears it — 6.75:1
-     and 5.92:1 — and keeps the step below text-primary visible. */
-  --color-text-secondary: var(--gray-100);
-  --color-text-tertiary:  var(--gray-200);
-  padding-block: var(--space-5);
-  text-align: center;
-}
-.panel > .eyebrow,
-.panel > .heading { padding-inline: var(--space-4); }
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4) var(--space-0);
-}
-/* No chip behind the mark — it sits straight on the panel. That is
-   only legible because the file it points at is the REVERSED cut of
-   the artwork: the supplied PNG carries a near black (#3A3A3C)
-   wordmark, which lands at about 1.4:1 on brand-800 and disappears.
-   super-host-logo-reversed.png is that same file with the neutral
-   wordmark taken to white and the coral and gold left untouched.
-   The original is kept alongside it for a light ground. Swap the src
-   back if this section ever moves onto a light surface. */
-.stats__badge {
-  justify-self: center;
-  width: fit-content;
-}
-.stats__badge img { display: block; max-width: 7rem; height: auto; margin-inline: auto; }
-.stat__number { margin-bottom: var(--space-2); font-variant-numeric: tabular-nums; }
-.stat__label  { color: var(--color-text-secondary); }
 
 /* ============================================================
    10 · FOOTER
@@ -3518,18 +3290,6 @@ a { color: inherit; text-decoration: none; }
      size instead of dividing a row. */
   .slider--even .slider__track > * { flex: 1 1 0; min-width: 0; }
 
-  /* 384px, and the reason the rail needs five cards rather than
-     three: five at this width overrun the 1200px panel, so the
-     seam between the two halves of the loop is always off screen.
-     Three would leave a hole in it on a wide monitor. */
-  .review { width: 24rem; padding: var(--space-5); }
-
-  .review-rail { margin-top: var(--space-6); }
-
-  /* Twice as wide once the rail is 1104px instead of 343px — the
-     same proportion of it, not a bigger fade. */
-  .review-rail::after { width: var(--space-9); }   /* 64px */
-
   /* Two up becomes four — flex: 1 1 0 above already did that by
      dropping the 50% basis — and the ratio gives way to a fixed
      height, because the accordion further down changes a card's
@@ -3584,9 +3344,6 @@ a { color: inherit; text-decoration: none; }
   }
 
 
-  .panel { padding: var(--space-6) var(--space-5); }
-  .stats { max-width: 45rem; margin-inline: auto; gap: var(--space-6); }
-  .stats__badge img { max-width: 8.5rem; }
 
 }
 
@@ -4492,4 +4249,426 @@ a { color: inherit; text-decoration: none; }
                                                opacity   var(--dur-reveal) var(--ease-out),
                                                transform var(--dur-reveal) var(--ease-out); }
   .slider--even .tall-card:hover { flex-grow: 2.6; }
+}
+
+
+/* ============================================================
+   8 · TESTIMONIALS — lake photo, cream panel, looping review rail
+   ------------------------------------------------------------
+   A copy of the testimonial block on little-river-landing-website,
+   so the block matches that page to the pixel rather than the page
+   ramp. That is why it carries its own colours: the reference is
+   built on named hexes, and the oklch ramps in _template.css do
+   not land on them. The section is a light island (data-theme=
+   "light" in the markup) on the dark page.
+
+   Reference frame (1440): eyebrow · h2 48/56 · trust row · panel
+   1140 wide, 20px pad, r32 · cards 400 wide, r28 · a 28.87×273.67
+   tab on each side of the panel with a chevron in it.
+   ============================================================ */
+.reviews {
+  /* colours — the reference's own tokens */
+  --rv-ground:      #F8FDFD;   /* cream-50: the section, and what the photo is washed to */
+  --rv-panel:       #FCFAF6;   /* cream-75: the panel and the tabs */
+  --rv-card:        #E4E9E9;   /* teal-50: the cards */
+  --rv-outline:     #35A9B5;   /* teal-300: the 0.5px line round panel + tabs */
+  --rv-avatar:      #1B4C54;   /* teal-600: avatar disc, and the arrow on hover */
+  --rv-heading:     #153338;   /* teal-800: h2, stat labels */
+  --rv-ink:         #05161A;   /* ink-900: card text, arrow at rest */
+  --rv-muted:       #53666A;   /* the date line */
+  --rv-gold:        #C68F45;   /* stat values, stars, focus ring */
+  --rv-eyebrow:     #A1632D;   /* bronze-600 */
+  --rv-arrow-off:   #D6D6D6;   /* a blocked arrow */
+  --rv-card-edge:   rgba(9, 36, 42, 0.10);
+  --rv-shade:       rgba(9, 36, 42, 0.13);
+  --rv-shade-mid:   rgba(9, 36, 42, 0.045);
+
+  /* geometry */
+  --rail-pad: 20px;             /* panel padding = viewport inset */
+  --rail-pr: 32px;              /* panel radius (CSS + outline rect) */
+  --rail-vr: 28px;              /* viewport clip radius */
+  --rail-tab-w: 28.8711px;
+  --rail-tab-h: 273.669px;
+  --rail-tab-reach: 16px;       /* extra hit area past the tab's flat edge */
+  --rail-glyph-w: 14.5377px;
+  --rail-glyph-from-outer: 14px;
+  --review-w: 400px;            /* card width; the track's centring pads read it too */
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--rv-ground);
+  padding-block: var(--space-12) var(--space-6);
+}
+.reviews > .container {
+  position: relative;
+  z-index: 1;
+  /* gutters outside the 1200px measure, as on the reference, so the
+     1140px rail fits whole at 1440 instead of being squeezed to 1104 */
+  max-width: calc(var(--container-max) + 2 * var(--space-7));
+  padding-inline: var(--space-7);
+}
+.reviews__sprite { position: absolute; }
+
+/* the photo behind everything, at full opacity — its own edges are
+   already washed to --rv-ground, so it needs no scrim */
+.reviews__bg { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
+.reviews__bg-img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+
+/* head */
+.reviews__head { text-align: center; }
+.reviews__head .eyebrow {
+  margin-bottom: var(--space-3);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.12em;
+  color: var(--rv-eyebrow);
+}
+.reviews__head .heading {
+  margin-bottom: 0;
+  font-family: var(--font-display);
+  font-size: 48px;
+  line-height: 56px;
+  font-weight: 400;
+  font-optical-sizing: auto;
+  letter-spacing: normal;
+  text-wrap: balance;
+  color: var(--rv-heading);
+}
+
+/* trust row: three value-over-label columns, one row at every width.
+   The Google mark, 400+ and 5 share the gold Fraunces "value" slot. */
+.reviews__summary {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: var(--space-12);
+  margin-top: var(--space-5);
+}
+.review-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  text-align: center;
+}
+.review-stat__value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 500;
+  font-variant-numeric: lining-nums;
+  color: var(--rv-gold);
+}
+.review-stat__logo { width: 28px; height: 28px; }
+.review-stat__label {
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 28px;
+  color: var(--rv-heading);
+}
+
+/* panel + rail */
+.review-rail {
+  position: relative;
+  width: 1140px;
+  max-width: 100%;
+  margin: var(--space-7) auto 0;
+  /* drop-shadow, not box-shadow: it traces panel + tabs as one
+     silhouette, so no seam falls between them */
+  filter: drop-shadow(0 6px 24px rgba(9, 36, 42, 0.05));
+}
+.review-rail__panel {
+  position: relative;
+  padding: var(--rail-pad);
+  background: var(--rv-panel);
+  border-radius: var(--rail-pr);
+}
+/* The 0.5px outline is an SVG rect rather than a CSS border: browsers
+   snap sub-pixel borders to whole device pixels while SVG anti-aliases,
+   so a CSS border read heavier than the tabs' stroke where they met. */
+.review-rail__outline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.review-rail__outline rect {
+  x: 0.25px;
+  y: 0.25px;
+  width: calc(100% - 0.5px);
+  height: calc(100% - 0.5px);
+  rx: calc(var(--rail-pr) - 0.25px);
+  fill: none;
+  stroke: var(--rv-outline);
+  stroke-width: 0.5;
+}
+.review-rail__viewport {
+  position: relative;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  border-radius: var(--rail-vr);
+}
+.review-rail__viewport::-webkit-scrollbar { display: none; }
+
+/* Scroll-edge shade over the viewport's open sides, so a part-shown
+   card reads as tucked under the frame rather than sliced. Keyed off
+   the arrows' disabled state, which script.js already keeps. */
+.review-rail__panel::before,
+.review-rail__panel::after {
+  content: "";
+  position: absolute;
+  top: var(--rail-pad);
+  bottom: var(--rail-pad);
+  width: 44px;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-ui) ease;
+}
+.review-rail__panel::before {
+  left: var(--rail-pad);
+  border-radius: var(--rail-vr) 0 0 var(--rail-vr);
+  background: linear-gradient(to right, var(--rv-shade), var(--rv-shade-mid) 38%, rgba(9, 36, 42, 0));
+}
+.review-rail__panel::after {
+  right: var(--rail-pad);
+  border-radius: 0 var(--rail-vr) var(--rail-vr) 0;
+  background: linear-gradient(to left, var(--rv-shade), var(--rv-shade-mid) 38%, rgba(9, 36, 42, 0));
+}
+.review-rail:has([data-rail-prev]:not(:disabled)) .review-rail__panel::before { opacity: 1; }
+.review-rail:has([data-rail-next]:not(:disabled)) .review-rail__panel::after  { opacity: 1; }
+
+.review-rail__track {
+  display: flex;
+  gap: var(--space-3);
+  width: max-content;
+}
+
+/* the card */
+.review {
+  display: flex;
+  flex-direction: column;
+  width: var(--review-w);
+  min-height: 392px;
+  padding: 32px 24px;
+  background: var(--rv-card);
+  border-radius: 28px;
+  scroll-snap-align: start;
+  color: var(--rv-ink);
+  text-align: left;
+}
+/* Tablet up: the focus card is always whole and centred, neighbours
+   peek equally either side, and Next/Prev swap the next card into the
+   centre. Half-viewport-minus-half-card padding lets the first and
+   last cards reach the centre too. Phones keep start-snap + peek. */
+@media (min-width: 768px) {
+  .review-rail__track { padding-inline: calc(50% - var(--review-w) / 2); }
+  .review { scroll-snap-align: center; }
+}
+/* Looping (script.js clones the set either side): the clones fill the
+   ends, so the centring pads go — they would only ever be blank track. */
+.review-rail__viewport.is-looping .review-rail__track { padding-inline: 0; }
+
+.review__head { display: flex; align-items: center; gap: 12px; }
+.review__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--rv-avatar);
+  color: var(--rv-ground);
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 1;
+}
+.review__name {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 24px;
+  color: var(--rv-ink);
+}
+.review__date {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rv-muted);
+}
+/* Star glyph fills 79% of its viewBox: 18px icons at -3px gap = 14px
+   stars on a 15px pitch. */
+.review__stars {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 0;
+  margin-top: 26px;
+  margin-left: -1.5px;
+  color: var(--rv-gold);
+}
+.review__star { width: 18px; height: 18px; margin-inline: -1.5px; fill: currentColor; }
+.review__body {
+  margin: 28px 0 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 30px;
+  color: var(--rv-ink);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 7;
+  overflow: hidden;
+}
+.review.is-expanded .review__body { display: block; -webkit-line-clamp: unset; overflow: visible; }
+.review__more { display: none; }   /* phones only — see the mobile block */
+
+/* The tabs (tablet + desktop). A 28.87×273.67 cream tab grows out of
+   the panel's side: flat outer edge, S-curve shoulders easing into the
+   panel, chevron inside it. The button is a transparent hit target that
+   also reaches 16px past the tab; the inline SVG draws the tab, over-
+   lapping the panel edge by 1px so it covers the panel outline there
+   and the line runs unbroken from panel onto tab.
+
+   No z-index on panel or nav: they stack by DOM order (nav after panel)
+   so the tabs paint over the panel edge. A positive z-index here made
+   WebKit skip painting the nav — its layer overflows the filtered box. */
+.review-rail__nav {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0;
+  margin: 0;
+  pointer-events: none;
+}
+.review-rail__nav[hidden] { display: none; }
+.review-rail__btn {
+  pointer-events: auto;
+  position: relative;
+  width: calc(var(--rail-tab-w) + var(--rail-tab-reach));
+  height: var(--rail-tab-h);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--rv-ink);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: color var(--dur-press) ease;
+}
+.review-rail__btn[data-rail-prev] { margin-left: calc(-1 * (var(--rail-tab-w) + var(--rail-tab-reach))); }
+.review-rail__btn[data-rail-next] {
+  margin-right: calc(-1 * (var(--rail-tab-w) + var(--rail-tab-reach)));
+  transform: scaleX(-1);   /* one asset, mirrored — shoulders and chevron alike */
+}
+.review-rail__tab {
+  position: absolute;
+  top: 0;
+  right: -1px;             /* the 1px extension in the path covers the panel outline */
+  width: calc(var(--rail-tab-w) + 1px);
+  height: 100%;
+  max-width: none;
+  overflow: visible;       /* let the 0.5px stroke breathe past the box */
+  pointer-events: none;
+}
+.review-rail__tab-fill { fill: var(--rv-panel); }
+.review-rail__tab-line { fill: none; stroke: var(--rv-outline); stroke-width: 0.5; }
+.review-rail__glyph {
+  position: absolute;
+  top: 121.372px;          /* export offset inside the tab */
+  right: calc(var(--rail-tab-w) - var(--rail-glyph-from-outer) - var(--rail-glyph-w));
+  width: var(--rail-glyph-w);
+  height: 35.2539px;
+  fill: currentColor;
+}
+.review-rail__btn:focus-visible { outline: none; }
+.review-rail__btn:focus-visible .review-rail__glyph {
+  outline: 2px solid var(--rv-gold);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.review-rail__btn:hover:not(:disabled) { background: transparent; color: var(--rv-avatar); }
+/* A blocked arrow fades the glyph only — the tab must stay opaque or
+   the lake photo shows through it. */
+.review-rail__btn:disabled { cursor: default; opacity: 1; color: var(--rv-arrow-off); }
+
+@media (max-width: 1279px) {
+  .reviews > .container { max-width: calc(var(--container-max) + 2 * var(--space-6)); padding-inline: var(--space-6); }
+  .reviews__head .heading { font-size: 44px; line-height: 52px; }
+  .review-rail { width: auto; margin-inline: var(--space-4); }
+}
+@media (max-width: 1023px) {
+  /* Tablet keeps the tabs; only the panel chrome tightens. */
+  .reviews__head .heading { font-size: 40px; line-height: 48px; }
+  .reviews__summary { gap: var(--space-7); }
+  .review-rail { margin-inline: 0; --rail-pad: 12px; --rail-pr: 24px; }
+  .review { border-radius: 20px; }
+}
+@media (max-width: 767px) {
+  /* Phones: the whole block becomes one cream card filling a viewport,
+     no tabs — the rail is swiped and the peeking next card is the cue.
+     Bodies clamp to five lines behind Read More. */
+  .reviews {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100svh;
+    padding-block: var(--space-7) var(--space-9);
+    --review-w: 272px;
+  }
+  .reviews > .container {
+    width: auto;
+    margin-inline: var(--space-3);
+    padding: 32px 17px 24px;
+    background: var(--rv-panel);
+    border: 1px solid var(--rv-card-edge);
+    border-radius: 24px;
+    box-shadow: 0 8px 16px rgba(9, 36, 42, 0.08), 0 0 2px rgba(9, 36, 42, 0.08);
+  }
+  .reviews__head .heading { font-size: 32px; line-height: 40px; }
+  .reviews__summary { margin-top: var(--space-3); padding-block: var(--space-2); gap: var(--space-3); }
+  .review-stat__value { font-size: 22px; line-height: 28px; }
+  .review-stat__logo { width: 24px; height: 24px; }
+  .review-stat__label { font-size: 14px; line-height: 20px; }
+  .review-rail { margin-top: 0; filter: none; }
+  .review-rail__panel { padding: 0; background: transparent; border: 0; border-radius: 0; }
+  .review-rail__panel::before, .review-rail__panel::after { display: none; }
+  .review-rail__outline { display: none; }
+  .review-rail__viewport { container-type: inline-size; border-radius: 16px; }
+  .review-rail__track { gap: var(--space-3); }
+  .review { width: calc(100cqw - 48px); min-height: 0; padding: 24px 20px; border-radius: 16px; }   /* next card peeks 32px */
+  .review__stars { margin-top: 14px; }
+  .review__body { margin-top: 14px; line-height: 28px; -webkit-line-clamp: 5; }
+  .review__more {
+    display: inline-flex;
+    align-self: flex-start;
+    margin-top: 12px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--rv-avatar);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .review__more[hidden] { display: none; }
+  .review-rail__nav { display: none; }
 }
