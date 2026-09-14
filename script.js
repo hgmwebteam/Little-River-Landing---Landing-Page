@@ -1036,6 +1036,21 @@
 
   function goToWelcome() { window.location.assign('welcome.html'); }
 
+  /* Opt-in accepted: fire a standard Lead on the CLIENT pixel only
+     (trackSingle, so the agency pixel initialised on the same page
+     does not get it), then move on to welcome.html. The pixel sends
+     its hit as an image request the browser lets finish across the
+     navigation, but a short grace period makes that a certainty. If
+     the pixel is blocked or not loaded, go straight through. */
+  var CLIENT_PIXEL_ID = '1816709606431185';
+  var LEAD_GRACE_MS = 300;
+
+  function trackLeadThenGoToWelcome() {
+    if (typeof window.fbq !== 'function') { goToWelcome(); return; }
+    try { window.fbq('trackSingle', CLIENT_PIXEL_ID, 'Lead'); } catch (err) { goToWelcome(); return; }
+    setTimeout(goToWelcome, LEAD_GRACE_MS);
+  }
+
   /* The message element sits after .offer-form__control and is
      [hidden] until needed. role="alert" on it means assistive tech
      announces the text the moment it appears, so nothing here has
@@ -1124,13 +1139,13 @@
 
       var done = function () { setBusy(form, false); form.removeAttribute('aria-busy'); };
 
-      if (typeof fetch !== 'function') { goToWelcome(); return; }
+      if (typeof fetch !== 'function') { trackLeadThenGoToWelcome(); return; }
 
       submitSignup(email, form.getAttribute('data-subscribe-endpoint')).then(function (res) {
         if (res.status === 400) { done(); setFormError(form, MSG_INVALID); return; }
-        goToWelcome();
+        trackLeadThenGoToWelcome();
       }, function () {
-        goToWelcome();
+        trackLeadThenGoToWelcome();
       });
     });
   });
