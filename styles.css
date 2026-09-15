@@ -1636,7 +1636,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* The clips are tall portrait and this frame is square, so cover keeps
-   only a middle band of each one. Hull & Hearth is an aerial with the
+   only a middle band of each one. Woods & Water is an aerial with the
    restaurant low in the frame and sky above it; centred, the band is
    mostly lake and the building is cut at the roofline. Sitting the
    frame lower keeps the restaurant and its deck and loses sky instead.
@@ -3894,7 +3894,7 @@ a { color: inherit; text-decoration: none; }
      `/ ""` IS NOT DECORATION — it is what takes the generated text
      out of the accessibility tree. The count and the position in it
      are already announced by the <ol> this sits in, so a screen
-     reader reading "one Lodging two Hull and Hearth" is the same
+     reader reading "one Lodging two Woods and Water" is the same
      information twice. A browser that does not support the alt
      syntax ignores the whole `content` value rather than half of it,
      which is why the fallback declaration above it is there: it gets
